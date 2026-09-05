@@ -356,11 +356,10 @@ if (window.WGLSocial) WGLSocial.bindNickClicks(document);
       if (!u) {
         return `
           <div class="top-player ${meta.cls} is-empty" aria-hidden="true">
-            <div class="top-player__medal" aria-hidden="true"><span></span></div>
-            <div class="top-player__av-wrap"><span class="top-player__av-ph"></span></div>
+            <span class="top-player__av-ph" aria-hidden="true"></span>
             <strong class="top-player__nick">—</strong>
             <span class="top-player__score">${meta.label}</span>
-            <div class="top-player__pedestal"><span>топ ${place}</span></div>
+            <div class="top-player__pedestal"><b>${place}</b></div>
           </div>`;
       }
       const av = window.WGLSocial
@@ -369,13 +368,10 @@ if (window.WGLSocial) WGLSocial.bindNickClicks(document);
       const nick = window.WGLSocial ? WGLSocial.esc(u.nick) : u.nick;
       return `
         <a class="top-player ${meta.cls}" href="/id${u.id}" data-user-id="${u.id}">
-          <div class="top-player__medal" aria-hidden="true"><span></span></div>
-          <div class="top-player__av-wrap">
-            <img src="${av}" alt="">
-          </div>
+          <img class="top-player__av" src="${av}" alt="">
           <strong class="top-player__nick">${nick}</strong>
           <span class="top-player__score">${u.rating} очк.</span>
-          <div class="top-player__pedestal"><span>топ ${place}</span></div>
+          <div class="top-player__pedestal"><b>${place}</b></div>
         </a>`;
     }
 
