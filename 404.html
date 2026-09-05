@@ -1,43 +1,157 @@
 <!DOCTYPE html>
-<html lang="ru">
+<html lang="ru" data-theme="dark">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>WGL.su</title>
-<meta name="robots" content="noindex">
+<title>Запуск игры — wgl.su</title>
+<meta name="robots" content="noindex, follow">
 <link rel="icon" href="/icon.png" type="image/png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@500;600&family=Syne:wght@800&display=swap" rel="stylesheet">
 <style>
-  html, body { margin: 0; min-height: 100%; background: #0a0604; color: #f3ebe3; font-family: system-ui, sans-serif; }
-  .wrap { min-height: 100vh; display: grid; place-items: center; text-align: center; padding: 24px; }
-  a { color: #ffb347; }
+:root {
+  --bg: #0a0604;
+  --ink: #f3ebe3;
+  --muted: rgba(243, 235, 227, 0.72);
+  --accent: #e11d2e;
+  --hot: #ffb347;
+}
+* { box-sizing: border-box; }
+html, body {
+  margin: 0; padding: 0; height: 100%;
+  background: var(--bg); overflow: hidden;
+  font-family: "Sora", sans-serif; color: var(--ink);
+}
+iframe {
+  width: 100vw; height: 100vh; border: none;
+  display: none; background: #000;
+}
+.wrapper {
+  position: fixed; inset: 0;
+  display: flex; align-items: center; justify-content: center;
+  flex-direction: column; text-align: center; padding: 24px;
+  background:
+    radial-gradient(circle at 70% 20%, rgba(225, 29, 46, 0.22), transparent 40%),
+    linear-gradient(160deg, #0a0604, #1a100c 55%, #2a1810);
+  animation: fadeIn 0.35s ease;
+}
+.brand {
+  font-family: "Syne", sans-serif; font-weight: 800;
+  font-size: 1.1rem; letter-spacing: -0.04em;
+  margin-bottom: 28px; color: var(--hot);
+}
+.loader {
+  width: 34px; height: 34px;
+  border: 3px solid rgba(243, 235, 227, 0.2);
+  border-top-color: var(--accent);
+  border-radius: 50%;
+  animation: spin 0.75s linear infinite;
+  margin-bottom: 18px;
+}
+.message {
+  font-size: 0.95rem; color: var(--muted);
+  white-space: pre-line; max-width: 28ch;
+}
+.home {
+  margin-top: 22px; color: var(--ink);
+  font-size: 0.85rem; font-weight: 600;
+  text-decoration: none; opacity: 0.75;
+}
+.home:hover { opacity: 1; }
+.play-timer {
+  position: fixed;
+  top: 14px;
+  right: 14px;
+  z-index: 50;
+  display: none;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  border-radius: 12px;
+  background: rgba(10, 6, 4, 0.45);
+  border: 1px solid rgba(243, 235, 227, 0.14);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  color: rgba(243, 235, 227, 0.88);
+  font-size: 0.82rem;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  pointer-events: none;
+  user-select: none;
+}
+.play-timer.is-on { display: inline-flex; }
+.play-timer__dot {
+  width: 7px; height: 7px; border-radius: 50%;
+  background: var(--accent);
+  box-shadow: 0 0 0 3px rgba(225, 29, 46, 0.25);
+  animation: pulse 1.4s ease infinite;
+}
+.play-timer__label {
+  opacity: 0.7;
+  font-weight: 500;
+  font-size: 0.72rem;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+.play-timer__time {
+  font-variant-numeric: tabular-nums;
+  color: var(--hot);
+  min-width: 5.5ch;
+}
+.not-found {
+  position: fixed; inset: 0;
+  display: grid; place-items: center;
+  text-align: center; padding: 24px;
+  background: var(--bg);
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+@keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+@keyframes pulse {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.55; transform: scale(0.85); }
+}
 </style>
 <script>
+/* Профили → /user/?id= ; игры /g/xxx остаются здесь без редиректа */
 (function () {
   var p = location.pathname || "/";
   var m = p.match(/^\/id(\d+)\/?$/i);
   if (m) {
-    location.replace("/user/?id=" + m[1] + location.search.replace(/^\?/, "&") + location.hash);
+    location.replace("/user/?id=" + m[1] + (location.search ? location.search.replace(/^\?/, "&") : "") + location.hash);
     return;
   }
   m = p.match(/^\/user\/(?:id)?(\d+)\/?$/i);
   if (m) {
-    location.replace("/user/?id=" + m[1] + location.search.replace(/^\?/, "&") + location.hash);
-    return;
-  }
-  m = p.match(/^\/g\/([a-zA-Z0-9]{3,8})\/?$/);
-  if (m) {
-    location.replace("/game/?code=" + encodeURIComponent(m[1].toLowerCase()) + location.search.replace(/^\?/, "&") + location.hash);
-    return;
+    location.replace("/user/?id=" + m[1] + (location.search ? location.search.replace(/^\?/, "&") : "") + location.hash);
   }
 })();
 </script>
 </head>
 <body>
-  <div class="wrap">
-    <div>
-      <p>Страница не найдена</p>
-      <p><a href="/">← на главную</a></p>
-    </div>
+
+<iframe id="gameFrame" title="Игра" allowfullscreen></iframe>
+
+<div id="playTimer" class="play-timer" aria-live="polite">
+  <span class="play-timer__dot" aria-hidden="true"></span>
+  <span class="play-timer__label">ЛК</span>
+  <span class="play-timer__time" id="playTimerValue">00:00</span>
+</div>
+
+<div id="status" class="wrapper">
+  <div class="brand">WGL.su</div>
+  <div class="loader" aria-hidden="true"></div>
+  <div class="message">Запуск игры…</div>
+  <a class="home" href="/">← на главную</a>
+</div>
+
+<div id="notFound" class="not-found" hidden>
+  <div>
+    <p>Страница не найдена</p>
+    <p><a class="home" href="/">← на главную</a></p>
   </div>
+</div>
+
+<script src="/assets/play-launch.js?1"></script>
 </body>
 </html>
