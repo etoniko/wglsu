@@ -602,6 +602,11 @@ video {
   transform-origin: center;
 }
 
+.game-card[data-game="clers"] .media .thumb[data-media="video"] {
+  transform: scale(1.28);
+  transform-origin: center;
+}
+
 .media-placeholder {
   position: absolute;
   inset: 0;
