@@ -136,6 +136,17 @@ const message = status.querySelector(".message");
 const playTimer = document.getElementById("playTimer");
 const playTimerValue = document.getElementById("playTimerValue");
 
+function apiBase() {
+  const h = location.hostname;
+  if (h === "wgl.su" || h === "www.wgl.su" || h.endsWith("github.io")) {
+    return "https://sixz.ru";
+  }
+  return "";
+}
+function apiUrl(path) {
+  return apiBase() + path;
+}
+
 function goHome() { location.href = "/"; }
 
 function codeFromPath() {
@@ -157,7 +168,7 @@ function formatTimer(ms) {
 async function resolveGame() {
   const code = codeFromPath();
   if (!code) return null;
-  const res = await fetch(`/api/g/${encodeURIComponent(code)}`);
+  const res = await fetch(apiUrl(`/api/g/${encodeURIComponent(code)}`));
   if (!res.ok) return null;
   const data = await res.json();
   return data.game || null;
@@ -197,7 +208,7 @@ function startPlayTracking(game) {
     Authorization: "Bearer " + token,
   };
 
-  fetch("/api/play/start", {
+  fetch(apiUrl("/api/play/start"), {
     method: "POST",
     headers,
     body: JSON.stringify({ gameId: game.code || game.id, url: game.url }),
@@ -215,7 +226,7 @@ function startPlayTracking(game) {
     sessionMs += deltaMs;
     playTimerValue.textContent = formatTimer(sessionMs);
 
-    fetch("/api/play/heartbeat", {
+    fetch(apiUrl("/api/play/heartbeat"), {
       method: "POST",
       headers,
       body: JSON.stringify({ game: game.code || game.id, deltaMs }),
@@ -239,7 +250,7 @@ function startPlayTrackingSafe(game) {
     Authorization: "Bearer " + token,
   };
 
-  fetch("/api/play/start", {
+  fetch(apiUrl("/api/play/start"), {
     method: "POST",
     headers,
     body: JSON.stringify({ gameId: game.code || game.id, url: game.url }),
@@ -260,7 +271,7 @@ function startPlayTrackingSafe(game) {
     const now = Date.now();
     const deltaMs = now - lastBeat;
     lastBeat = now;
-    fetch("/api/play/heartbeat", {
+    fetch(apiUrl("/api/play/heartbeat"), {
       method: "POST",
       headers,
       body: JSON.stringify({ game: game.code || game.id, deltaMs }),

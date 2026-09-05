@@ -8,7 +8,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;500;600;700&family=Syne:wght@700;800&display=swap" rel="stylesheet">
-<link href="/assets/style.css?18" rel="stylesheet">
+<link href="/assets/style.css?33" rel="stylesheet">
 <link href="/cabinet/cabinet.css?3" rel="stylesheet">
 <style>
 .profile-page { max-width: 720px; margin: 0 auto; padding: 28px 20px 64px; }
@@ -55,7 +55,7 @@
   <p class="cab-hint">Загрузка профиля…</p>
 </main>
 
-<script src="/assets/social.js?4"></script>
+<script src="/assets/social.js?5"></script>
 <script>
 function idFromPath() {
   const p = location.pathname;
@@ -63,6 +63,8 @@ function idFromPath() {
   if (m) return Number(m[1]);
   m = p.match(/\/user\/(?:id)?(\d+)\/?$/i);
   if (m) return Number(m[1]);
+  const q = new URLSearchParams(location.search).get("id");
+  if (q && /^\d+$/.test(q)) return Number(q);
   return null;
 }
 
@@ -76,7 +78,7 @@ function idFromPath() {
   try {
     const headers = {};
     if (WGLSocial.token()) headers.Authorization = `Bearer ${WGLSocial.token()}`;
-    const res = await fetch(`/api/users/${id}`, { headers });
+    const res = await fetch(WGLSocial.apiUrl(`/api/users/${id}`), { headers });
     const data = await res.json();
     if (!res.ok || !data.user) throw new Error(data.error || "Не найден");
     const u = data.user;
@@ -100,17 +102,17 @@ function idFromPath() {
       .map((g) => `<div class="cab-game-row"><strong>${WGLSocial.esc(g.name)}</strong><span>${g.sessions} игр</span><span>${WGLSocial.esc(g.playTime)}</span></div>`)
       .join("") || `<p class="cab-hint">Пока нет игр</p>`;
     const awards = (u.awards || [])
-      .map((a) => `<img src="${WGLSocial.esc(a.icon)}" title="${WGLSocial.esc(a.title)}" alt="">`)
+      .map((a) => `<img src="${WGLSocial.esc(WGLSocial.mediaUrl(a.icon))}" title="${WGLSocial.esc(a.title)}" alt="">`)
       .join("") || `<span class="cab-hint">Нет наград</span>`;
     const gifts = (u.giftsReceived || []).length
       ? (u.giftsReceived || []).slice(-12).reverse().map((g) =>
-          `<img src="${WGLSocial.esc(g.icon)}" title="${WGLSocial.esc(g.title)} от ${WGLSocial.esc(g.fromNick)}" alt="">`
+          `<img src="${WGLSocial.esc(WGLSocial.mediaUrl(g.icon))}" title="${WGLSocial.esc(g.title)} от ${WGLSocial.esc(g.fromNick)}" alt="">`
         ).join("")
       : `<span class="cab-hint">Подарков пока нет</span>`;
 
     root.innerHTML = `
       <div class="profile-hero">
-        <img src="${WGLSocial.esc(u.avatar || WGLSocial.DEFAULT_AVATAR)}" alt="">
+        <img src="${WGLSocial.esc(WGLSocial.mediaUrl(u.avatar || WGLSocial.DEFAULT_AVATAR))}" alt="">
         <div>
           <div class="profile-id">id${u.id}</div>
           <h1>${WGLSocial.esc(u.nick)}</h1>

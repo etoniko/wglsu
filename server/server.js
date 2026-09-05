@@ -79,6 +79,8 @@ const ALLOWED_ORIGINS = new Set([
   "http://wgl.su",
   "https://www.wgl.su",
   "http://www.wgl.su",
+  "https://etoniko.github.io",
+  "http://etoniko.github.io",
   "https://sixz.ru",
   "http://sixz.ru",
   "http://localhost:6020",

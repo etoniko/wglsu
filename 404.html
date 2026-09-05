@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>WGL.su</title>
+<meta name="robots" content="noindex">
+<link rel="icon" href="/icon.png" type="image/png">
+<style>
+  html, body { margin: 0; min-height: 100%; background: #0a0604; color: #f3ebe3; font-family: system-ui, sans-serif; }
+  .wrap { min-height: 100vh; display: grid; place-items: center; text-align: center; padding: 24px; }
+  a { color: #ffb347; }
+</style>
+<script>
+(function () {
+  var p = location.pathname || "/";
+  var target = null;
+  if (/^\/id\d+\/?$/i.test(p) || /^\/user\/(?:id)?\d+\/?$/i.test(p)) {
+    target = "/user/";
+  } else if (/^\/g\/[a-zA-Z0-9]{3,8}\/?$/.test(p)) {
+    target = "/game/";
+  }
+  if (!target) return;
+  fetch(target, { cache: "no-store" })
+    .then(function (r) {
+      if (!r.ok) throw new Error("fail");
+      return r.text();
+    })
+    .then(function (html) {
+      document.open();
+      document.write(html);
+      document.close();
+    })
+    .catch(function () {
+      location.replace(target);
+    });
+})();
+</script>
+</head>
+<body>
+  <div class="wrap">
+    <div>
+      <p>Страница не найдена</p>
+      <p><a href="/">← на главную</a></p>
+    </div>
+  </div>
+</body>
+</html>
