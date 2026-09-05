@@ -185,6 +185,31 @@ export async function removeFromRatingIndex(userId) {
   await writeJson(file, list);
 }
 
+/** Walk all user shards and rebuild rating board (after formula change). */
+export async function rebuildRatingBoard(calcFn) {
+  const board = [];
+  for (let shard = 0; shard < 256; shard++) {
+    const dir = path.join(DATA_DIR, "users", String(shard));
+    if (!fs.existsSync(dir)) continue;
+    for (const name of fs.readdirSync(dir)) {
+      if (!name.endsWith(".json")) continue;
+      const user = readJson(path.join(dir, name), null);
+      if (!user?.id) continue;
+      user.rating = calcFn(user);
+      writeJsonSync(userPath(user.id), user);
+      board.push({
+        id: user.id,
+        nick: user.nick,
+        rating: user.rating || 0,
+        avatar: user.avatar || DEFAULT_AVATAR,
+      });
+    }
+  }
+  board.sort((a, b) => b.rating - a.rating || a.id - b.id);
+  await writeJson(ratingIndexPath(), board.slice(0, 5000));
+  return board.length;
+}
+
 export const DEFAULT_AVATAR = "/assets/default-avatar.png";
 
 export function publicUser(user) {

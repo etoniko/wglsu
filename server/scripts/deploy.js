@@ -103,7 +103,7 @@ async function main() {
     ].join(" && ")
   );
   console.log(setup.out);
-  console.log(`\nLive: http://${HOST}:${PORT}/cabinet/`);
+  console.log(`\nAPI: http://${HOST}:${PORT}/  → site ${process.env.WGL_PUBLIC_SITE || "https://wgl.su"}`);
   conn.end();
 }
 

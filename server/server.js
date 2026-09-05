@@ -22,6 +22,7 @@ import {
   ratingIndexPath,
   nextCounter,
   DEFAULT_AVATAR,
+  rebuildRatingBoard,
 } from "./lib/store.js";
 import {
   registerUser,
@@ -998,38 +999,53 @@ app.post("/api/forum/threads/:id/posts", authMiddleware, async (req, res) => {
   }
 });
 
-// ——— Pretty URLs: /g/agars , /id1 , /user/1 ———
+// ——— Pretty URLs / site pages → публичный клиент на wgl.su ———
+const PUBLIC_SITE = (process.env.WGL_PUBLIC_SITE || "https://wgl.su").replace(/\/$/, "");
+
+function redirectToSite(req, res) {
+  res.redirect(302, PUBLIC_SITE + req.originalUrl);
+}
+
 app.get("/api/g/:code", (req, res) => {
   const game = findGame(req.params.code);
   if (!game) return res.status(404).json({ ok: false, error: "Игра не найдена" });
   res.json({ ok: true, game: { ...game, play: playPath(game) } });
 });
 
-app.get("/g/:code", (req, res) => {
-  const game = findGame(req.params.code);
-  if (!game) return res.status(404).sendFile(path.join(ROOT, "game", "missing.html"));
-  res.sendFile(path.join(ROOT, "game", "index.html"));
+app.get(["/", "/index.html"], (_req, res) => {
+  res.redirect(302, PUBLIC_SITE + "/");
 });
 
-app.get(["/id:id", "/user/:id", "/user/id:id"], (req, res) => {
-  res.sendFile(path.join(ROOT, "user", "index.html"));
-});
+app.get(
+  ["/g/:code", "/id:id", "/user/:id", "/user/id:id", "/rating", "/rating/"],
+  redirectToSite
+);
 
-app.get(["/rating", "/rating/"], (_req, res) => {
-  res.sendFile(path.join(ROOT, "rating", "index.html"));
-});
-
-// Static
+// API runtime only: uploads + assets (no site index / client pages)
 app.use("/uploads", express.static(UPLOADS_DIR, { maxAge: "1d" }));
 app.use("/assets", express.static(path.join(ROOT, "assets"), { maxAge: "1h" }));
-app.use("/brand", express.static(path.join(ROOT, "brand"), { maxAge: "1d" }));
-app.use("/photo", express.static(path.join(ROOT, "photo"), { maxAge: "1d" }));
-app.use("/video", express.static(path.join(ROOT, "video"), { maxAge: "1d" }));
-app.use("/cabinet", express.static(path.join(ROOT, "cabinet"), { maxAge: "0" }));
-app.use("/community", express.static(path.join(ROOT, "community"), { maxAge: "0" }));
-app.use("/game", express.static(path.join(ROOT, "game"), { maxAge: "0" }));
-app.use("/user", express.static(path.join(ROOT, "user"), { maxAge: "0" }));
-app.use(express.static(ROOT, { maxAge: "0", index: "index.html" }));
+
+app.use((req, res, next) => {
+  if (
+    req.path.startsWith("/api") ||
+    req.path.startsWith("/uploads") ||
+    req.path.startsWith("/assets") ||
+    req.path === "/ws"
+  ) {
+    return next();
+  }
+  if (req.method === "GET" || req.method === "HEAD") {
+    return res.redirect(302, PUBLIC_SITE + (req.originalUrl || "/"));
+  }
+  next();
+});
+
+app.use((req, res) => {
+  if (req.path.startsWith("/api")) {
+    return res.status(404).json({ ok: false, error: "Не найдено" });
+  }
+  res.status(404).end();
+});
 
 app.use((err, _req, res, _next) => {
   res.status(500).json({ ok: false, error: err.message || "Ошибка сервера" });
@@ -1061,7 +1077,10 @@ wss.on("connection", (ws) => {
 });
 
 server.listen(PORT, "0.0.0.0", () => {
-  console.log(`WGL cabinet server on :${PORT}`);
+  console.log(`WGL API on :${PORT} (site → ${PUBLIC_SITE})`);
+  rebuildRatingBoard(calcRating)
+    .then((n) => console.log(`rating rebuilt for ${n} users`))
+    .catch((e) => console.error("rating rebuild failed", e));
   runPeriodAwards().catch(() => {});
   setInterval(() => runPeriodAwards().catch(() => {}), 60 * 60 * 1000);
 });
