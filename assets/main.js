@@ -186,12 +186,12 @@ function buildGrid(list) {
 
   list.forEach((g, i) => {
     const card = document.createElement("article");
-    card.className = "game-card";
-    card.dataset.game = code;
-    card.style.animationDelay = `${i * 60}ms`;
     const score = Number(g.score) || 0;
     const code = g.code || g.id;
     const mine = Number(g.myVotes) || 0;
+    card.className = "game-card";
+    card.dataset.game = code;
+    card.style.animationDelay = `${i * 60}ms`;
 
     card.innerHTML = `
       <div class="media">
