@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200" fill="none">
+  <!-- Simple Russian bear head mark for watermarks / favicon fallback -->
+  <circle cx="52" cy="58" r="28" fill="#1a0f0a"/>
+  <circle cx="148" cy="58" r="28" fill="#1a0f0a"/>
+  <ellipse cx="100" cy="108" rx="72" ry="68" fill="#1a0f0a"/>
+  <ellipse cx="100" cy="128" rx="28" ry="22" fill="#2a1810"/>
+  <circle cx="78" cy="98" r="8" fill="#f2e8de"/>
+  <circle cx="122" cy="98" r="8" fill="#f2e8de"/>
+  <path d="M72 145c12 18 44 18 56 0" stroke="#c1121f" stroke-width="6" stroke-linecap="round"/>
+</svg>

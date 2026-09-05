@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="ru" data-theme="dark">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Профиль — WGL.su</title>
+<link rel="icon" href="/icon.png" type="image/png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;500;600;700&family=Syne:wght@700;800&display=swap" rel="stylesheet">
+<link href="/assets/style.css?18" rel="stylesheet">
+<link href="/cabinet/cabinet.css?3" rel="stylesheet">
+<style>
+.profile-page { max-width: 720px; margin: 0 auto; padding: 28px 20px 64px; }
+.profile-hero {
+  display: flex; gap: 18px; align-items: center; flex-wrap: wrap;
+  padding: 22px; border: 1px solid var(--border); border-radius: 18px;
+  background: rgba(36,24,17,.55); margin-bottom: 18px;
+}
+.profile-hero img {
+  width: 96px; height: 96px; border-radius: 50%; object-fit: cover;
+  border: 2px solid rgba(255,179,71,.45);
+}
+.profile-hero h1 {
+  font-family: var(--font-display); letter-spacing: -.03em;
+  font-size: clamp(1.5rem, 4vw, 2rem); margin-bottom: 4px;
+}
+.profile-id { color: var(--accent-hot); font-weight: 700; }
+.profile-meta { color: var(--muted); font-size: .92rem; }
+.profile-awards { display: flex; flex-wrap: wrap; gap: 10px; }
+.profile-awards img { width: 44px; height: 44px; }
+.profile-actions { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px; }
+</style>
+</head>
+<body>
+<div class="site-bg" aria-hidden="true"></div>
+<header class="topbar">
+  <a class="brand" href="/">
+    <img class="brand-logo" src="/icon.png" alt="" width="40" height="40">
+    <span class="brand-mark">WGL<span class="brand-dot">.su</span></span>
+    <span class="brand-tagline">профиль</span>
+  </a>
+  <div class="topbar-actions">
+    <a class="topbar-rating" href="/rating/" aria-label="Рейтинг" title="Рейтинг">
+      <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+        <path d="M8 21h8M12 17v4M7 4h10v4a5 5 0 0 1-10 0V4Z"/>
+        <path d="M5 8H3a2 2 0 0 0 2 4h1M19 8h2a2 2 0 0 1-2 4h-1"/>
+      </svg>
+    </a>
+    <a class="btn btn-ghost topbar-cab" href="/cabinet/login/" id="cabLink">Войти</a>
+  </div>
+</header>
+
+<main class="profile-page" id="root">
+  <p class="cab-hint">Загрузка профиля…</p>
+</main>
+
+<script src="/assets/social.js?4"></script>
+<script>
+function idFromPath() {
+  const p = location.pathname;
+  let m = p.match(/\/id(\d+)\/?$/i);
+  if (m) return Number(m[1]);
+  m = p.match(/\/user\/(?:id)?(\d+)\/?$/i);
+  if (m) return Number(m[1]);
+  return null;
+}
+
+(async function () {
+  const id = idFromPath();
+  const root = document.getElementById("root");
+  if (!id) {
+    root.innerHTML = `<p>Профиль не найден. <a href="/">На главную</a></p>`;
+    return;
+  }
+  try {
+    const headers = {};
+    if (WGLSocial.token()) headers.Authorization = `Bearer ${WGLSocial.token()}`;
+    const res = await fetch(`/api/users/${id}`, { headers });
+    const data = await res.json();
+    if (!res.ok || !data.user) throw new Error(data.error || "Не найден");
+    const u = data.user;
+    document.title = `${u.nick} — id${u.id} · WGL.su`;
+
+    let actions = "";
+    if (WGLSocial.token() && !u.isSelf) {
+      if (u.isFriend) {
+        actions = `<a class="btn btn-primary" href="/cabinet/?dm=${u.id}">ЛС</a>
+          <a class="btn btn-ghost" href="/cabinet/?gift=${u.id}">Подарок</a>`;
+      } else if (u.requestOut) {
+        actions = `<span class="cab-hint">Заявка отправлена</span>`;
+      } else if (u.requestIn) {
+        actions = `<button type="button" class="btn btn-primary" id="acceptFriend">Принять в друзья</button>`;
+      } else {
+        actions = `<button type="button" class="btn btn-primary" id="addFriend">В друзья</button>`;
+      }
+    }
+
+    const games = (u.statsFormatted?.byGame || [])
+      .map((g) => `<div class="cab-game-row"><strong>${WGLSocial.esc(g.name)}</strong><span>${g.sessions} игр</span><span>${WGLSocial.esc(g.playTime)}</span></div>`)
+      .join("") || `<p class="cab-hint">Пока нет игр</p>`;
+    const awards = (u.awards || [])
+      .map((a) => `<img src="${WGLSocial.esc(a.icon)}" title="${WGLSocial.esc(a.title)}" alt="">`)
+      .join("") || `<span class="cab-hint">Нет наград</span>`;
+    const gifts = (u.giftsReceived || []).length
+      ? (u.giftsReceived || []).slice(-12).reverse().map((g) =>
+          `<img src="${WGLSocial.esc(g.icon)}" title="${WGLSocial.esc(g.title)} от ${WGLSocial.esc(g.fromNick)}" alt="">`
+        ).join("")
+      : `<span class="cab-hint">Подарков пока нет</span>`;
+
+    root.innerHTML = `
+      <div class="profile-hero">
+        <img src="${WGLSocial.esc(u.avatar || WGLSocial.DEFAULT_AVATAR)}" alt="">
+        <div>
+          <div class="profile-id">id${u.id}</div>
+          <h1>${WGLSocial.esc(u.nick)}</h1>
+          <div class="profile-meta">место ${u.place || "—"} · очки ${u.rating} · с ${new Date(u.registeredAt).toLocaleDateString("ru-RU")} · друзей ${u.friendsCount || 0}</div>
+          <div class="profile-actions">${actions}</div>
+        </div>
+      </div>
+      <div class="cab-block"><h3>Статистика</h3>
+        <ul class="cab-stats">
+          <li><span>Игровых сессий</span><strong>${u.stats?.gamesPlayed || 0}</strong></li>
+          <li><span>Сообщений</span><strong>${u.stats?.messages || 0}</strong></li>
+          <li><span>Время в играх</span><strong>${WGLSocial.esc(u.statsFormatted?.totalPlay || "0с")}</strong></li>
+        </ul>
+      </div>
+      <div class="cab-block"><h3>Игры</h3><div class="cab-games-stats">${games}</div></div>
+      <div class="cab-block"><h3>Награды</h3><div class="profile-awards">${awards}</div></div>
+      <div class="cab-block"><h3>Подарки</h3><div class="profile-awards">${gifts}</div></div>`;
+
+    document.getElementById("addFriend")?.addEventListener("click", async () => {
+      try {
+        await WGLSocial.api("/api/friends/request", { method: "POST", body: { userId: u.id } });
+        location.reload();
+      } catch (e) { alert(e.message); }
+    });
+    document.getElementById("acceptFriend")?.addEventListener("click", async () => {
+      try {
+        await WGLSocial.api("/api/friends/accept", { method: "POST", body: { userId: u.id } });
+        location.reload();
+      } catch (e) { alert(e.message); }
+    });
+  } catch (e) {
+    root.innerHTML = `<p>Профиль не найден. <a href="/">На главную</a></p>`;
+  }
+})();
+</script>
+</body>
+</html>

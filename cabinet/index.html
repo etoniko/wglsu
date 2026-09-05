@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html lang="ru" data-theme="dark">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Личный кабинет — WGL.su</title>
+<meta name="description" content="Личный кабинет игрока Web Game Link: профиль, друзья, чат, форум, награды и рейтинг.">
+<link rel="icon" href="/icon.png" type="image/png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;500;600;700&family=Syne:wght@700;800&display=swap" rel="stylesheet">
+<link href="/assets/style.css?18" rel="stylesheet">
+<link href="/cabinet/cabinet.css?3" rel="stylesheet">
+</head>
+<body>
+<div class="site-bg" aria-hidden="true"></div>
+
+<header class="topbar">
+  <a class="brand" href="/" aria-label="Web Game Link">
+    <img class="brand-logo" src="/icon.png" alt="" width="40" height="40">
+    <span class="brand-mark">WGL<span class="brand-dot">.su</span></span>
+    <span class="brand-tagline">личный кабинет</span>
+  </a>
+  <div class="topbar-actions">
+    <a class="btn btn-ghost" href="/">Игры</a>
+    <a class="topbar-rating" href="/rating/" aria-label="Рейтинг" title="Рейтинг">
+      <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+        <path d="M8 21h8M12 17v4M7 4h10v4a5 5 0 0 1-10 0V4Z"/>
+        <path d="M5 8H3a2 2 0 0 0 2 4h1M19 8h2a2 2 0 0 1-2 4h-1"/>
+      </svg>
+    </a>
+    <button class="theme-toggle" type="button" onclick="toggleTheme()" aria-label="Сменить тему">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+        <path d="M12 3v2M12 19v2M5.6 5.6l1.4 1.4M17 17l1.4 1.4M3 12h2M19 12h2M5.6 18.4l1.4-1.4M17 7l1.4-1.4"/>
+        <circle cx="12" cy="12" r="4"/>
+      </svg>
+    </button>
+  </div>
+</header>
+
+<main class="cabinet">
+  <section class="cab-app" id="appPanel">
+    <aside class="cab-side">
+      <div class="cab-profile-mini">
+        <img id="meAvatar" class="cab-avatar" src="/assets/default-avatar.png" alt="">
+        <div>
+          <div class="cab-nick" id="meNick">—</div>
+          <div class="cab-meta">ID <span id="meId">—</span> · место <span id="mePlace">—</span> · очки <span id="meRating">0</span></div>
+        </div>
+      </div>
+      <nav class="cab-nav">
+        <button type="button" class="cab-nav-btn is-active" data-view="profile">Профиль</button>
+        <button type="button" class="cab-nav-btn" data-view="friends">Друзья</button>
+        <button type="button" class="cab-nav-btn" data-view="dm">ЛС</button>
+        <button type="button" class="cab-nav-btn" data-view="gifts">Подарки</button>
+        <button type="button" class="cab-nav-btn" data-view="chat">Глобальный чат</button>
+        <button type="button" class="cab-nav-btn" data-view="gamechats">Чаты игр</button>
+        <button type="button" class="cab-nav-btn" data-view="forum">Общение</button>
+        <button type="button" class="cab-nav-btn" data-view="awards">Награды</button>
+        <button type="button" class="cab-nav-btn" data-view="rating">Рейтинг</button>
+        <button type="button" class="cab-nav-btn" data-view="votes">Голоса</button>
+      </nav>
+      <button type="button" class="btn btn-ghost cab-logout" id="logoutBtn">Выйти</button>
+    </aside>
+
+    <div class="cab-main">
+      <div class="cab-view is-active" data-view="profile">
+        <h2>Профиль</h2>
+        <div class="cab-grid-2">
+          <div class="cab-block">
+            <h3>Аватар</h3>
+            <div class="cab-avatar-row">
+              <img id="profileAvatar" class="cab-avatar lg" src="/assets/default-avatar.png" alt="">
+              <label class="btn btn-ghost cab-file">
+                Загрузить
+                <input type="file" id="avatarInput" accept="image/png,image/jpeg,image/webp,image/gif" hidden>
+              </label>
+            </div>
+            <p class="cab-hint">PNG/JPG/WEBP до 512KB. Пока не загрузишь — будет default.</p>
+          </div>
+          <div class="cab-block">
+            <h3>О игроке</h3>
+            <ul class="cab-stats" id="profileStats"></ul>
+          </div>
+        </div>
+        <div class="cab-block">
+          <h3>Время в играх</h3>
+          <div id="gamesStats" class="cab-games-stats"></div>
+        </div>
+        <div class="cab-block">
+          <h3>Полученные подарки</h3>
+          <div id="giftsReceived" class="cab-gifts-row"></div>
+        </div>
+        <div class="cab-block">
+          <h3>Сеансы (макс. 2)</h3>
+          <div id="sessionsList" class="cab-sessions"></div>
+        </div>
+      </div>
+
+      <div class="cab-view" data-view="friends">
+        <h2>Друзья</h2>
+        <form id="friendSearchForm" class="cab-search-row">
+          <input name="q" placeholder="Поиск: ID, ник или рейтинг" autocomplete="off">
+          <button class="btn btn-primary" type="submit">Найти</button>
+        </form>
+        <div id="friendSearchResults" class="cab-list"></div>
+        <h3>Заявки</h3>
+        <div id="friendIncoming" class="cab-list"></div>
+        <h3>Мои друзья</h3>
+        <div id="friendsList" class="cab-list"></div>
+      </div>
+
+      <div class="cab-view" data-view="dm">
+        <h2>Личные сообщения</h2>
+        <p class="cab-hint">ЛС только между друзьями.</p>
+        <div class="cab-dm-layout">
+          <div id="dmList" class="cab-list"></div>
+          <div class="cab-dm-thread">
+            <div id="dmPeerTitle" class="cab-hint">Выбери диалог</div>
+            <div id="dmLog" class="cab-chat-log"></div>
+            <form id="dmForm" class="cab-chat-form" hidden>
+              <input name="text" maxlength="400" placeholder="Сообщение другу…" autocomplete="off" required>
+              <button class="btn btn-primary" type="submit">Отправить</button>
+            </form>
+          </div>
+        </div>
+      </div>
+
+      <div class="cab-view" data-view="gifts">
+        <h2>Подарки</h2>
+        <p class="cab-lead">Можно подарить <strong>1 бесплатный</strong> подарок. Остальные — за рубли, оплата скоро (пока тёмные).</p>
+        <div id="giftFreeLeft" class="cab-budget"></div>
+        <form id="giftSendForm" class="cab-form compact">
+          <label>Кому (ID игрока) <input name="toUserId" inputmode="numeric" required placeholder="например 1"></label>
+          <div id="giftsCatalog" class="cab-gifts-catalog"></div>
+          <button class="btn btn-primary" type="submit">Подарить выбранный</button>
+        </form>
+        <h3>Отправленные</h3>
+        <div id="giftsSentList" class="cab-list"></div>
+      </div>
+
+      <div class="cab-view" data-view="chat">
+        <h2>Глобальный чат</h2>
+        <p class="cab-hint">Тот же чат, что внизу главной. <a href="/#live">Открыть на сайте</a></p>
+        <div id="chatLog" class="cab-chat-log"></div>
+        <form id="chatForm" class="cab-chat-form">
+          <input name="text" maxlength="400" placeholder="Сообщение…" autocomplete="off" required>
+          <button class="btn btn-primary" type="submit">Отправить</button>
+        </form>
+      </div>
+
+      <div class="cab-view" data-view="gamechats">
+        <h2>Чаты по играм</h2>
+        <p class="cab-hint">На главной чат игры открывается поверх карточки — кнопка «Чат».</p>
+        <div id="gameChatPick" class="game-chat-pick"></div>
+        <div id="gameChatLog" class="cab-chat-log"></div>
+        <form id="gameChatForm" class="cab-chat-form">
+          <input name="text" maxlength="400" placeholder="Сообщение в чат игры…" autocomplete="off" required>
+          <button class="btn btn-primary" type="submit">Отправить</button>
+        </form>
+      </div>
+
+      <div class="cab-view" data-view="forum">
+        <h2>Общение</h2>
+        <p class="cab-lead">Общий чат зоны — внизу главной и здесь в «Глобальный чат».</p>
+        <p><a class="btn btn-primary" href="/#live">На главную → общий чат</a></p>
+      </div>
+
+      <div class="cab-view" data-view="awards">
+        <h2>Награды</h2>
+        <p class="cab-lead">За игры, время, чат, друзей и лидерство за день / неделю / год.</p>
+        <div id="awardsGrid" class="cab-awards"></div>
+      </div>
+
+      <div class="cab-view" data-view="rating">
+        <h2>Рейтинг</h2>
+        <p class="cab-hint">Формула: игры×15 + сообщения×3 + минуты×2</p>
+        <div id="ratingList" class="cab-list"></div>
+      </div>
+
+      <div class="cab-view" data-view="votes">
+        <h2>Голосование за карточки</h2>
+        <p class="cab-lead">Сколько игр отыграл — столько голосов. Можно все в одну карточку или по одному. Можно забрать назад.</p>
+        <div id="voteBudgetBar" class="cab-budget"></div>
+        <button type="button" class="btn btn-ghost" id="resetVotesBtn">Вернуть все голоса</button>
+        <div id="votesList" class="cab-votes"></div>
+      </div>
+    </div>
+  </section>
+</main>
+
+<script src="/cabinet/auth-shared.js?1"></script>
+<script src="/cabinet/cabinet.js?3"></script>
+</body>
+</html>

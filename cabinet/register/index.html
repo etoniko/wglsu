@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="ru" data-theme="dark">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Регистрация — WGL.su</title>
+<link rel="icon" href="/icon.png" type="image/png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;500;600;700&family=Syne:wght@700;800&display=swap" rel="stylesheet">
+<link href="/assets/style.css?9" rel="stylesheet">
+<link href="/cabinet/cabinet.css?2" rel="stylesheet">
+</head>
+<body>
+<div class="site-bg" aria-hidden="true"></div>
+<header class="topbar">
+  <a class="brand" href="/" aria-label="Web Game Link">
+    <img class="brand-logo" src="/icon.png" alt="" width="40" height="40">
+    <span class="brand-mark">WGL<span class="brand-dot">.su</span></span>
+    <span class="brand-tagline">регистрация</span>
+  </a>
+  <div class="topbar-actions">
+    <a class="btn btn-ghost" href="/cabinet/login/">Вход</a>
+    <button class="theme-toggle" type="button" onclick="toggleTheme()" aria-label="Сменить тему">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3v2M12 19v2M5.6 5.6l1.4 1.4M17 17l1.4 1.4M3 12h2M19 12h2M5.6 18.4l1.4-1.4M17 7l1.4-1.4"/><circle cx="12" cy="12" r="4"/></svg>
+    </button>
+  </div>
+</header>
+
+<main class="cabinet">
+  <section class="cab-auth">
+    <div class="cab-auth-card">
+      <h1 class="cab-title">Регистрация</h1>
+      <p class="cab-lead">Создай аккаунт игрока. Капча защищает от ботов.</p>
+      <form id="registerForm" class="cab-form" autocomplete="off">
+        <!-- honeypot for bots -->
+        <input type="text" name="website" class="cab-hp" tabindex="-1" autocomplete="off" aria-hidden="true">
+        <input type="text" name="company" class="cab-hp" tabindex="-1" autocomplete="off" aria-hidden="true">
+
+        <label>Ник <input name="nick" autocomplete="username" required minlength="3" maxlength="20"></label>
+        <label>Пароль <input name="password" type="password" autocomplete="new-password" required minlength="6"></label>
+
+        <div class="cab-captcha">
+          <img id="captchaImg" alt="Капча" width="220" height="72">
+          <button type="button" class="btn btn-ghost" id="captchaReload">Обновить</button>
+        </div>
+        <label>Капча (буквы и цифры с картинки)
+          <input name="captcha" autocomplete="off" required maxlength="8" spellcheck="false">
+        </label>
+
+        <button class="btn btn-primary" type="submit">Создать аккаунт</button>
+      </form>
+      <p class="cab-error" id="authError" hidden></p>
+      <p class="cab-hint" style="margin-top:16px">Уже есть аккаунт? <a href="/cabinet/login/">Вход</a></p>
+    </div>
+  </section>
+</main>
+<script src="/cabinet/auth-shared.js?1"></script>
+<script>
+if (localStorage.getItem("wgl_token")) location.replace("/cabinet/");
+
+let captcha = { id: "", t0: Date.now() };
+
+async function loadCaptcha() {
+  const data = await api("/api/captcha");
+  captcha = { id: data.id, t0: data.t0 || Date.now() };
+  document.getElementById("captchaImg").src = data.image;
+  const input = document.querySelector('[name="captcha"]');
+  if (input) input.value = "";
+}
+
+document.getElementById("captchaReload").addEventListener("click", () => {
+  loadCaptcha().catch((e) => alert(e.message));
+});
+
+document.getElementById("registerForm").addEventListener("submit", async (e) => {
+  e.preventDefault();
+  const err = document.getElementById("authError");
+  err.hidden = true;
+  const fd = new FormData(e.target);
+  try {
+    const data = await api("/api/register", {
+      method: "POST",
+      body: {
+        nick: fd.get("nick"),
+        password: fd.get("password"),
+        captchaId: captcha.id,
+        captcha: fd.get("captcha"),
+        t0: captcha.t0,
+        website: fd.get("website"),
+        company: fd.get("company"),
+      },
+    });
+    localStorage.setItem("wgl_token", data.token);
+    location.href = "/cabinet/";
+  } catch (ex) {
+    err.hidden = false;
+    err.textContent = ex.message;
+    loadCaptcha().catch(() => {});
+  }
+});
+
+loadCaptcha().catch((e) => {
+  document.getElementById("authError").hidden = false;
+  document.getElementById("authError").textContent = e.message;
+});
+</script>
+</body>
+</html>

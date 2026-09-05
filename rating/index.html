@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="ru" data-theme="dark">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Рейтинг игроков — WGL.su</title>
+<meta name="description" content="Топ-1000 игроков Web Game Link. Место в рейтинге и очки.">
+<link rel="icon" href="/icon.png" type="image/png">
+<link rel="canonical" href="/rating/">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;500;600;700&family=Syne:wght@700;800&display=swap" rel="stylesheet">
+<link href="/assets/style.css?18" rel="stylesheet">
+<link href="/cabinet/cabinet.css?3" rel="stylesheet">
+</head>
+<body>
+<div class="site-bg" aria-hidden="true"></div>
+<header class="topbar">
+  <a class="brand" href="/">
+    <img class="brand-logo" src="/icon.png" alt="" width="40" height="40">
+    <span class="brand-mark">WGL<span class="brand-dot">.su</span></span>
+    <span class="brand-tagline">рейтинг</span>
+  </a>
+  <div class="topbar-actions">
+    <a class="topbar-rating is-on" href="/rating/" aria-label="Рейтинг" title="Рейтинг">
+      <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+        <path d="M8 21h8M12 17v4M7 4h10v4a5 5 0 0 1-10 0V4Z"/>
+        <path d="M5 8H3a2 2 0 0 0 2 4h1M19 8h2a2 2 0 0 1-2 4h-1"/>
+      </svg>
+    </a>
+    <a class="btn btn-ghost topbar-cab" href="/cabinet/login/" id="cabLink">Войти</a>
+  </div>
+</header>
+
+<main class="section rating-page">
+  <div class="section-head">
+    <h2>Топ игроков</h2>
+  </div>
+  <div id="ratingList" class="rating-list"></div>
+</main>
+
+<script src="/assets/social.js?4"></script>
+<script>
+(async function () {
+  const box = document.getElementById("ratingList");
+  try {
+    const data = await fetch(WGLSocial.apiUrl("/api/rating?limit=1000")).then((r) => r.json());
+    const list = data.rating || [];
+    if (!list.length) {
+      box.innerHTML = `<p class="cab-hint">Пока никого нет — стань первым</p>`;
+      return;
+    }
+    box.innerHTML = list.map((u) => `
+      <button type="button" class="rating-row" data-user-id="${u.id}">
+        <span class="rating-rank">топ ${u.place}</span>
+        <img src="${WGLSocial.esc(WGLSocial.mediaUrl(u.avatar || WGLSocial.DEFAULT_AVATAR))}" alt="">
+        <span class="rating-info">
+          <strong>${WGLSocial.esc(u.nick)}</strong>
+          <span class="cab-hint">id${u.id}</span>
+        </span>
+        <strong class="rating-score" title="Очки рейтинга"><span class="cab-hint">очки</span> ${u.rating}</strong>
+      </button>`).join("");
+    WGLSocial.bindNickClicks(box);
+  } catch {
+    box.innerHTML = `<p class="cab-hint">Не удалось загрузить рейтинг</p>`;
+  }
+})();
+</script>
+</body>
+</html>
