@@ -75,6 +75,9 @@ function idFromPath() {
     root.innerHTML = `<p>Профиль не найден. <a href="/">На главную</a></p>`;
     return;
   }
+  if (!location.pathname.match(/\/id\d+/i)) {
+    try { history.replaceState(null, "", "/id" + id + location.hash); } catch {}
+  }
   try {
     const headers = {};
     if (WGLSocial.token()) headers.Authorization = `Bearer ${WGLSocial.token()}`;

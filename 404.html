@@ -14,26 +14,21 @@
 <script>
 (function () {
   var p = location.pathname || "/";
-  var target = null;
-  if (/^\/id\d+\/?$/i.test(p) || /^\/user\/(?:id)?\d+\/?$/i.test(p)) {
-    target = "/user/";
-  } else if (/^\/g\/[a-zA-Z0-9]{3,8}\/?$/.test(p)) {
-    target = "/game/";
+  var m = p.match(/^\/id(\d+)\/?$/i);
+  if (m) {
+    location.replace("/user/?id=" + m[1] + location.search.replace(/^\?/, "&") + location.hash);
+    return;
   }
-  if (!target) return;
-  fetch(target, { cache: "no-store" })
-    .then(function (r) {
-      if (!r.ok) throw new Error("fail");
-      return r.text();
-    })
-    .then(function (html) {
-      document.open();
-      document.write(html);
-      document.close();
-    })
-    .catch(function () {
-      location.replace(target);
-    });
+  m = p.match(/^\/user\/(?:id)?(\d+)\/?$/i);
+  if (m) {
+    location.replace("/user/?id=" + m[1] + location.search.replace(/^\?/, "&") + location.hash);
+    return;
+  }
+  m = p.match(/^\/g\/([a-zA-Z0-9]{3,8})\/?$/);
+  if (m) {
+    location.replace("/game/?code=" + encodeURIComponent(m[1].toLowerCase()) + location.search.replace(/^\?/, "&") + location.hash);
+    return;
+  }
 })();
 </script>
 </head>

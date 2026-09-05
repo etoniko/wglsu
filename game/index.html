@@ -168,6 +168,9 @@ function formatTimer(ms) {
 async function resolveGame() {
   const code = codeFromPath();
   if (!code) return null;
+  if (!location.pathname.match(/\/g\//i)) {
+    try { history.replaceState(null, "", "/g/" + code + location.hash); } catch {}
+  }
   const res = await fetch(apiUrl(`/api/g/${encodeURIComponent(code)}`));
   if (!res.ok) return null;
   const data = await res.json();
