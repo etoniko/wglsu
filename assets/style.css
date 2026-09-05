@@ -591,9 +591,14 @@ video {
   pointer-events: none;
 }
 
-/* только у змейки — обрезаем чёрные полосы ролика */
+/* обрезаем чёрные полосы в роликах */
 .game-card[data-game="slith"] .media .thumb[data-media="video"] {
   transform: scale(1.18);
+  transform-origin: center;
+}
+
+.game-card[data-game="agrio"] .media .thumb[data-media="video"] {
+  transform: scale(1.15);
   transform-origin: center;
 }
 
