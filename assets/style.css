@@ -1536,17 +1536,17 @@ body.auth-gate-open { overflow: hidden; }
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
   align-items: end;
-  gap: 14px 18px;
-  max-width: 720px;
+  gap: 12px 14px;
+  max-width: 640px;
   margin: 0 auto;
-  padding-top: 8px;
+  padding-top: 4px;
 }
 
 .top-player {
   display: grid;
   justify-items: center;
   align-content: end;
-  gap: 8px;
+  gap: 6px;
   padding: 0;
   text-decoration: none;
   color: inherit;
@@ -1554,32 +1554,32 @@ body.auth-gate-open { overflow: hidden; }
   background: transparent;
   text-align: center;
   position: relative;
-  transition: transform 0.22s ease;
+  transition: transform 0.2s ease;
 }
 
 .top-player:hover {
-  transform: translateY(-4px);
+  transform: translateY(-3px);
 }
 
 .top-player__av,
 .top-player__av-ph {
   display: block;
-  width: 68px;
-  height: 68px;
-  border-radius: 18px;
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
   object-fit: cover;
-  background: #1a100c;
-  box-shadow: 0 10px 24px rgba(0, 0, 0, 0.4);
+  background: #241810;
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.35);
 }
 
 .top-player__av-ph {
-  background: #1a100c;
+  background: #241810;
 }
 
 .top-player__nick {
   font-family: var(--font-display);
   letter-spacing: -0.03em;
-  font-size: 1.05rem;
+  font-size: 0.95rem;
   max-width: 100%;
   padding: 0 2px;
   overflow: hidden;
@@ -1589,67 +1589,68 @@ body.auth-gate-open { overflow: hidden; }
 }
 
 .top-player__score {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 4px;
   color: var(--muted);
-  font-size: 0.8rem;
+  font-size: 0.72rem;
   font-variant-numeric: tabular-nums;
   margin-bottom: 2px;
+}
+
+.top-player__score b {
+  font-size: 0.95rem;
+  font-weight: 800;
+  color: var(--ink);
+  letter-spacing: -0.02em;
 }
 
 .top-player__pedestal {
   width: 100%;
   display: grid;
   place-items: center;
-  border-radius: 12px 12px 4px 4px;
+  border-radius: 10px 10px 3px 3px;
   font-weight: 800;
   color: #0a0604;
-  box-shadow: 0 14px 28px rgba(0, 0, 0, 0.32);
+  box-shadow: 0 12px 24px rgba(0, 0, 0, 0.35);
 }
 
 .top-player__pedestal b {
   font-family: var(--font-display);
-  font-size: clamp(1.6rem, 5vw, 2.2rem);
+  font-size: clamp(1.45rem, 4.5vw, 1.9rem);
   letter-spacing: -0.04em;
   line-height: 1;
 }
 
-.top-player.is-gold .top-player__pedestal { height: 112px; }
-.top-player.is-silver .top-player__pedestal { height: 84px; }
-.top-player.is-bronze .top-player__pedestal { height: 64px; }
+/* золото и серебро — заметно выше */
+.top-player.is-gold .top-player__pedestal { height: 168px; }
+.top-player.is-silver .top-player__pedestal { height: 128px; }
+.top-player.is-bronze .top-player__pedestal { height: 72px; }
 
 .top-player.is-gold {
   z-index: 2;
-  transform: translateY(-14px);
 }
-.top-player.is-gold:hover { transform: translateY(-18px); }
-
-.top-player.is-silver { transform: translateY(4px); }
-.top-player.is-silver:hover { transform: translateY(0); }
-
-.top-player.is-bronze { transform: translateY(14px); }
-.top-player.is-bronze:hover { transform: translateY(10px); }
 
 .top-player.is-gold .top-player__av,
 .top-player.is-gold .top-player__av-ph {
-  width: 86px;
-  height: 86px;
-  border-radius: 22px;
-  box-shadow: 0 12px 28px rgba(0, 0, 0, 0.45);
+  width: 52px;
+  height: 52px;
 }
 .top-player.is-gold .top-player__pedestal {
   background: #f5c518;
 }
-.top-player.is-gold .top-player__nick { font-size: 1.18rem; }
-.top-player.is-gold .top-player__score { color: #f5c518; }
+.top-player.is-gold .top-player__nick { font-size: 1.05rem; }
+.top-player.is-gold .top-player__score b { color: #f5c518; }
 
 .top-player.is-silver .top-player__pedestal {
   background: #c5cad3;
 }
-.top-player.is-silver .top-player__score { color: #c5cad3; }
+.top-player.is-silver .top-player__score b { color: #c5cad3; }
 
 .top-player.is-bronze .top-player__pedestal {
   background: #e07020;
 }
-.top-player.is-bronze .top-player__score { color: #e07020; }
+.top-player.is-bronze .top-player__score b { color: #e07020; }
 
 .top-player.is-empty {
   opacity: 0.4;
@@ -1658,17 +1659,19 @@ body.auth-gate-open { overflow: hidden; }
 
 @media (max-width: 640px) {
   .top-players--podium {
-    gap: 10px 12px;
+    gap: 8px 10px;
     max-width: 100%;
   }
   .top-player__av,
-  .top-player__av-ph { width: 56px; height: 56px; border-radius: 14px; }
+  .top-player__av-ph { width: 38px; height: 38px; }
   .top-player.is-gold .top-player__av,
-  .top-player.is-gold .top-player__av-ph { width: 72px; height: 72px; border-radius: 16px; }
-  .top-player.is-gold .top-player__pedestal { height: 92px; }
-  .top-player.is-silver .top-player__pedestal { height: 70px; }
-  .top-player.is-bronze .top-player__pedestal { height: 54px; }
-  .top-player__nick { font-size: 0.92rem; }
-  .top-player.is-gold .top-player__nick { font-size: 1.02rem; }
-  .top-player__pedestal b { font-size: 1.45rem; }
+  .top-player.is-gold .top-player__av-ph { width: 44px; height: 44px; }
+  .top-player.is-gold .top-player__pedestal { height: 148px; }
+  .top-player.is-silver .top-player__pedestal { height: 112px; }
+  .top-player.is-bronze .top-player__pedestal { height: 64px; }
+  .top-player__nick { font-size: 0.86rem; }
+  .top-player.is-gold .top-player__nick { font-size: 0.94rem; }
+  .top-player__score { font-size: 0.68rem; }
+  .top-player__score b { font-size: 0.88rem; }
+  .top-player__pedestal b { font-size: 1.35rem; }
 }
