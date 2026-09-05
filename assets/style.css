@@ -1530,7 +1530,7 @@ body.auth-gate-open { overflow: hidden; }
 .rating-score { color: var(--accent-hot); }
 .rating-info { display: grid; gap: 2px; }
 
-/* homepage top-3 podium: 2 | 1 | 3 — аватар в пьедестале, ник/очки снизу */
+/* homepage top-3: аватар на весь пьедестал под цветной палитрой */
 .top-players,
 .top-players--podium {
   display: grid;
@@ -1565,45 +1565,57 @@ body.auth-gate-open { overflow: hidden; }
 }
 
 .top-player__pedestal {
+  position: relative;
   width: 100%;
+  overflow: hidden;
   display: flex;
   flex-direction: column;
   align-items: center;
-  justify-content: flex-start;
-  gap: 10px;
-  padding: 14px 10px 12px;
+  justify-content: flex-end;
+  padding: 12px 8px;
   border-radius: 14px 14px 0 0;
   border-style: solid;
   border-width: 2px;
   border-bottom-width: 0;
   box-sizing: border-box;
   flex-shrink: 0;
+  isolation: isolate;
 }
 
 .top-player__av,
 .top-player__av-ph {
-  display: block;
-  width: 48px;
-  height: 48px;
-  border-radius: 50%;
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
   object-fit: cover;
+  border: 0;
+  border-radius: 0;
+  z-index: 0;
   background: #1a100c;
-  flex-shrink: 0;
-  border: 2px solid rgba(255, 255, 255, 0.35);
 }
 
 .top-player__av-ph {
-  background: #1a100c;
+  display: block;
+}
+
+.top-player__pedestal::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  pointer-events: none;
 }
 
 .top-player__place {
-  margin-top: auto;
+  position: relative;
+  z-index: 2;
   font-family: var(--font-display);
   font-size: clamp(1.5rem, 5vw, 2rem);
   font-weight: 800;
   letter-spacing: -0.04em;
   line-height: 1;
-  opacity: 0.95;
+  text-shadow: 0 2px 10px rgba(0, 0, 0, 0.55);
 }
 
 .top-player__nick {
@@ -1616,7 +1628,6 @@ body.auth-gate-open { overflow: hidden; }
   text-overflow: ellipsis;
   white-space: nowrap;
   line-height: 1.15;
-  order: 2;
 }
 
 .top-player__score {
@@ -1626,7 +1637,6 @@ body.auth-gate-open { overflow: hidden; }
   color: var(--muted);
   font-size: 0.7rem;
   font-variant-numeric: tabular-nums;
-  order: 3;
 }
 
 .top-player__score b {
@@ -1638,41 +1648,32 @@ body.auth-gate-open { overflow: hidden; }
 
 .top-player.is-gold .top-player__pedestal {
   height: 180px;
-  background: rgba(245, 197, 24, 0.22);
   border-color: #f5c518;
-  color: #f5c518;
+  color: #ffe566;
 }
+.top-player.is-gold .top-player__pedestal::after {
+  background: rgba(245, 197, 24, 0.42);
+}
+
 .top-player.is-silver .top-player__pedestal {
   height: 140px;
-  background: rgba(197, 202, 211, 0.2);
   border-color: #c5cad3;
-  color: #c5cad3;
+  color: #e8eaef;
 }
+.top-player.is-silver .top-player__pedestal::after {
+  background: rgba(197, 202, 211, 0.4);
+}
+
 .top-player.is-bronze .top-player__pedestal {
   height: 100px;
-  background: rgba(224, 112, 32, 0.22);
   border-color: #e07020;
-  color: #e07020;
+  color: #ffb06a;
+}
+.top-player.is-bronze .top-player__pedestal::after {
+  background: rgba(224, 112, 32, 0.42);
 }
 
-.top-player.is-gold {
-  z-index: 2;
-}
-.top-player.is-gold .top-player__av,
-.top-player.is-gold .top-player__av-ph {
-  width: 56px;
-  height: 56px;
-  border-color: #f5c518;
-}
-.top-player.is-silver .top-player__av,
-.top-player.is-silver .top-player__av-ph {
-  border-color: #c5cad3;
-}
-.top-player.is-bronze .top-player__av,
-.top-player.is-bronze .top-player__av-ph {
-  border-color: #e07020;
-}
-
+.top-player.is-gold { z-index: 2; }
 .top-player.is-gold .top-player__nick { font-size: 1.05rem; }
 .top-player.is-gold .top-player__score b { color: #f5c518; }
 .top-player.is-silver .top-player__score b { color: #c5cad3; }
@@ -1688,10 +1689,6 @@ body.auth-gate-open { overflow: hidden; }
     gap: 8px;
     max-width: 100%;
   }
-  .top-player__av,
-  .top-player__av-ph { width: 40px; height: 40px; }
-  .top-player.is-gold .top-player__av,
-  .top-player.is-gold .top-player__av-ph { width: 48px; height: 48px; }
   .top-player.is-gold .top-player__pedestal { height: 160px; }
   .top-player.is-silver .top-player__pedestal { height: 124px; }
   .top-player.is-bronze .top-player__pedestal { height: 88px; }
