@@ -131,6 +131,11 @@ function escapeHtml(s) {
 document.getElementById("avatarInput").addEventListener("change", async (e) => {
   const file = e.target.files?.[0];
   if (!file) return;
+  if (file.size > 5 * 1024 * 1024) {
+    alert("Файл слишком большой — максимум 5 МБ");
+    e.target.value = "";
+    return;
+  }
   const fd = new FormData();
   fd.append("avatar", file);
   try {
@@ -138,6 +143,8 @@ document.getElementById("avatarInput").addEventListener("change", async (e) => {
     renderProfile(data.user, (await api("/api/me")).sessions);
   } catch (err) {
     alert(err.message);
+  } finally {
+    e.target.value = "";
   }
 });
 

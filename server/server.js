@@ -224,6 +224,8 @@ app.get("/api/me", authMiddleware, async (req, res) => {
 });
 
 // ——— Avatar ———
+const AVATAR_MAX_BYTES = 5 * 1024 * 1024; // 5 MB
+
 const storage = multer.diskStorage({
   destination: (_req, _file, cb) => cb(null, path.join(UPLOADS_DIR, "avatars")),
   filename: (req, file, cb) => {
@@ -234,10 +236,10 @@ const storage = multer.diskStorage({
 });
 const upload = multer({
   storage,
-  limits: { fileSize: 512 * 1024 },
+  limits: { fileSize: AVATAR_MAX_BYTES },
   fileFilter: (_req, file, cb) => {
     if (!/^image\/(png|jpeg|jpg|webp|gif)$/.test(file.mimetype)) {
-      return cb(new Error("Только изображения PNG/JPG/WEBP/GIF до 512KB"));
+      return cb(new Error("Только изображения PNG/JPG/WEBP/GIF"));
     }
     cb(null, true);
   },
@@ -246,7 +248,13 @@ const upload = multer({
 app.post("/api/avatar", authMiddleware, (req, res) => {
   upload.single("avatar")(req, res, async (err) => {
     try {
-      if (err) return res.status(400).json({ ok: false, error: err.message });
+      if (err) {
+        const msg =
+          err.code === "LIMIT_FILE_SIZE"
+            ? "Файл слишком большой — максимум 5 МБ"
+            : err.message || "Ошибка загрузки";
+        return res.status(400).json({ ok: false, error: msg });
+      }
       if (!req.file) return res.status(400).json({ ok: false, error: "Файл не получен" });
       const user = loadUser(req.user.id);
       limitUserAction(user, "avatar", LIMITS.avatarMinInterval);
