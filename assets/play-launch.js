@@ -108,10 +108,12 @@
       "allow",
       "fullscreen; autoplay; gamepad; accelerometer; gyroscope; clipboard-write"
     );
-    // как прямой заход — без referrer с wgl.su
-    iframe.setAttribute("referrerpolicy", "no-referrer");
+    iframe.setAttribute("referrerpolicy", "origin");
 
-    iframe.src = url;
+    // embed=1 — на стороне игры прячет юр.полоску; не триггерит Яндекс-режим
+    const u = new URL(url, location.href);
+    if (!u.searchParams.has("embed")) u.searchParams.set("embed", "1");
+    iframe.src = u.toString();
     iframe.onload = () => {
       loaded = true;
       status.style.display = "none";
