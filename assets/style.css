@@ -834,6 +834,16 @@ footer {
   margin-bottom: 12px;
 }
 
+.legal ul {
+  color: var(--muted);
+  margin: 0 0 12px;
+  padding-left: 1.25em;
+}
+
+.legal li {
+  margin-bottom: 6px;
+}
+
 .legal a.back {
   display: inline-flex;
   margin-bottom: 24px;
