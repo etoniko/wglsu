@@ -54,17 +54,7 @@ html, body {
   width: 100%;
   height: 100%;
   max-width: none;
-  transform-origin: center center;
-}
-
-/* виртуальный ПК-кадр, масштабируется под экран телефона */
-#gameStage.is-scaled #gameFrame {
-  position: absolute;
-  left: 50%;
-  top: 50%;
-  flex: none;
-  transform: translate(-50%, -50%) scale(var(--game-scale, 1));
-  will-change: transform;
+  /* без scale: игра видит реальный размер экрана и включает свой mobile CSS */
 }
 
 .wrapper {

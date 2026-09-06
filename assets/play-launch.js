@@ -8,10 +8,6 @@
     slith: { code: "slith", id: "slither-su", name: "Slither.su", url: "https://slither.su/" },
   };
 
-  /** Виртуальный «ПК»-кадр для игр под десктоп */
-  const BASE_W = 1280;
-  const BASE_H = 720;
-
   const iframe = document.getElementById("gameFrame");
   const stage = document.getElementById("gameStage");
   const fit = document.getElementById("gameFit");
@@ -100,34 +96,23 @@
     const mobile = isMobileLike(box.w, box.h);
     const portrait = box.h > box.w;
 
+    // Stage = реальный экран → внутри iframe window = эти же пиксели,
+    // чтобы media queries и мобильный CSS игры сработали.
     syncStageBox(box);
+    stage.classList.remove("is-scaled");
+    stage.style.removeProperty("--game-scale");
+    iframe.style.width = "100%";
+    iframe.style.height = "100%";
+    iframe.style.transform = "";
+    iframe.style.left = "";
+    iframe.style.top = "";
 
     if (orientHint) {
-      // подсказка только пока не fullscreen и портрет
       orientHint.classList.toggle("is-on", mobile && portrait && !isFsActive());
     }
-
     if (fsGate) {
       fsGate.classList.toggle("is-on", mobile && !isFsActive() && !fsTried);
     }
-
-    if (!mobile) {
-      stage.classList.remove("is-scaled");
-      stage.style.removeProperty("--game-scale");
-      iframe.style.width = "100%";
-      iframe.style.height = "100%";
-      iframe.style.transform = "";
-      return;
-    }
-
-    // Cover: игра заполняет весь видимый экран телефона (без чёрных полос)
-    const scale = Math.max(box.w / BASE_W, box.h / BASE_H);
-    stage.classList.add("is-scaled");
-    stage.style.setProperty("--game-scale", String(scale));
-    iframe.style.width = BASE_W + "px";
-    iframe.style.height = BASE_H + "px";
-    // transform задаётся CSS (translate + scale)
-    iframe.style.transform = "";
   }
 
   function scheduleFit() {
@@ -145,7 +130,7 @@
       else if (target.webkitRequestFullscreen) target.webkitRequestFullscreen();
       else if (target.webkitEnterFullscreen) target.webkitEnterFullscreen();
     } catch {
-      /* iOS / политика браузера — ок, cover всё равно на весь visualViewport */
+      /* iOS / политика браузера — ок, iframe всё равно на весь visualViewport */
     }
     try {
       const o = screen.orientation;
