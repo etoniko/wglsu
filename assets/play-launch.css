@@ -1,4 +1,4 @@
-/* WGL game iframe — full phone viewport + desktop fill */
+/* WGL game — чистый fullscreen iframe, поверх только таймер */
 :root {
   --bg: #0a0604;
   --ink: #f3ebe3;
@@ -41,9 +41,6 @@ html, body {
 #gameFit {
   position: absolute;
   inset: 0;
-  display: flex;
-  align-items: center;
-  justify-content: center;
   overflow: hidden;
 }
 
@@ -54,7 +51,6 @@ html, body {
   width: 100%;
   height: 100%;
   max-width: none;
-  /* без scale: игра видит реальный размер экрана и включает свой mobile CSS */
 }
 
 .wrapper {
@@ -108,15 +104,15 @@ html, body {
 
 .play-timer {
   position: fixed;
-  top: max(12px, env(safe-area-inset-top));
-  right: max(12px, env(safe-area-inset-right));
+  top: max(10px, env(safe-area-inset-top));
+  right: max(10px, env(safe-area-inset-right));
   z-index: 50;
   display: none;
   align-items: center;
   gap: 8px;
   padding: 8px 12px;
   border-radius: 12px;
-  background: rgba(10, 6, 4, 0.45);
+  background: rgba(10, 6, 4, 0.55);
   border: 1px solid rgba(243, 235, 227, 0.14);
   backdrop-filter: blur(10px);
   -webkit-backdrop-filter: blur(10px);
@@ -159,56 +155,6 @@ html, body {
   z-index: 6;
 }
 .not-found[hidden] { display: none !important; }
-
-.orient-hint {
-  display: none;
-  position: fixed;
-  left: 50%;
-  bottom: max(16px, env(safe-area-inset-bottom));
-  transform: translateX(-50%);
-  z-index: 40;
-  padding: 8px 12px;
-  border-radius: 999px;
-  background: rgba(10, 6, 4, 0.7);
-  border: 1px solid rgba(243, 235, 227, 0.16);
-  color: var(--muted);
-  font-size: 0.75rem;
-  pointer-events: none;
-  max-width: calc(100vw - 32px);
-  text-align: center;
-}
-.orient-hint.is-on { display: block; }
-
-.fs-gate {
-  display: none;
-  position: fixed;
-  inset: 0;
-  z-index: 60;
-  align-items: flex-end;
-  justify-content: center;
-  padding: 20px;
-  padding-bottom: max(20px, env(safe-area-inset-bottom));
-  background: linear-gradient(to top, rgba(0, 0, 0, 0.72), transparent 55%);
-  pointer-events: none;
-}
-.fs-gate.is-on {
-  display: flex;
-}
-.fs-gate__btn {
-  pointer-events: auto;
-  appearance: none;
-  border: 1px solid rgba(243, 235, 227, 0.22);
-  background: rgba(225, 29, 46, 0.92);
-  color: #fff;
-  font: 600 0.95rem "Sora", sans-serif;
-  padding: 14px 22px;
-  border-radius: 14px;
-  cursor: pointer;
-  box-shadow: 0 10px 28px rgba(0, 0, 0, 0.35);
-}
-.fs-gate__btn:active {
-  transform: scale(0.98);
-}
 
 @keyframes spin { to { transform: rotate(360deg); } }
 @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }

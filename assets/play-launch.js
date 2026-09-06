@@ -1,4 +1,4 @@
-/** Запуск игры: полный экран телефона + отслеживание visualViewport */
+/** Запуск игры: iframe на весь экран, поверх только таймер ЛК */
 (function () {
   const LOCAL_GAMES = {
     agars: { code: "agars", id: "agar-su", name: "Agar.su", url: "https://agar.su/" },
@@ -10,18 +10,13 @@
 
   const iframe = document.getElementById("gameFrame");
   const stage = document.getElementById("gameStage");
-  const fit = document.getElementById("gameFit");
   const status = document.getElementById("status");
   const message = status?.querySelector(".message");
   const playTimer = document.getElementById("playTimer");
   const playTimerValue = document.getElementById("playTimerValue");
   const notFound = document.getElementById("notFound");
-  const orientHint = document.getElementById("orientHint");
-  const fsGate = document.getElementById("fsGate");
-  const fsBtn = document.getElementById("fsBtn");
 
   let fitRaf = 0;
-  let fsTried = false;
 
   function apiBase() {
     const h = location.hostname;
@@ -63,24 +58,9 @@
     };
   }
 
-  function isMobileLike(vw, vh) {
-    const ua = navigator.userAgent || "";
-    const touch = navigator.maxTouchPoints > 0 || "ontouchstart" in window;
-    const narrow = Math.min(vw, vh) < 820;
-    const mobileUa = /Android|iPhone|iPad|iPod|Mobile|Opera Mini|IEMobile/i.test(ua);
-    return mobileUa || (touch && narrow);
-  }
-
-  function isFsActive() {
-    return !!(
-      document.fullscreenElement ||
-      document.webkitFullscreenElement ||
-      document.msFullscreenElement
-    );
-  }
-
-  function syncStageBox(box) {
-    if (!stage) return;
+  function fitIframe() {
+    if (!iframe || !stage) return;
+    const box = viewportBox();
     stage.style.left = box.left + "px";
     stage.style.top = box.top + "px";
     stage.style.width = box.w + "px";
@@ -88,31 +68,8 @@
     stage.style.right = "auto";
     stage.style.bottom = "auto";
     stage.style.minHeight = "0";
-  }
-
-  function fitIframe() {
-    if (!iframe || !stage) return;
-    const box = viewportBox();
-    const mobile = isMobileLike(box.w, box.h);
-    const portrait = box.h > box.w;
-
-    // Stage = реальный экран → внутри iframe window = эти же пиксели,
-    // чтобы media queries и мобильный CSS игры сработали.
-    syncStageBox(box);
-    stage.classList.remove("is-scaled");
-    stage.style.removeProperty("--game-scale");
     iframe.style.width = "100%";
     iframe.style.height = "100%";
-    iframe.style.transform = "";
-    iframe.style.left = "";
-    iframe.style.top = "";
-
-    if (orientHint) {
-      orientHint.classList.toggle("is-on", mobile && portrait && !isFsActive());
-    }
-    if (fsGate) {
-      fsGate.classList.toggle("is-on", mobile && !isFsActive() && !fsTried);
-    }
   }
 
   function scheduleFit() {
@@ -121,26 +78,6 @@
       fitRaf = 0;
       fitIframe();
     });
-  }
-
-  async function enterFullscreen() {
-    const target = document.documentElement;
-    try {
-      if (target.requestFullscreen) await target.requestFullscreen({ navigationUI: "hide" });
-      else if (target.webkitRequestFullscreen) target.webkitRequestFullscreen();
-      else if (target.webkitEnterFullscreen) target.webkitEnterFullscreen();
-    } catch {
-      /* iOS / политика браузера — ок, iframe всё равно на весь visualViewport */
-    }
-    try {
-      const o = screen.orientation;
-      if (o && o.lock) await o.lock("landscape");
-    } catch {
-      /* lock может быть недоступен */
-    }
-    fsTried = true;
-    if (fsGate) fsGate.classList.remove("is-on");
-    scheduleFit();
   }
 
   function formatTimer(ms) {
@@ -164,14 +101,15 @@
     let loaded = false;
 
     fitIframe();
-    if (stage) stage.classList.add("is-on");
+    stage.classList.add("is-on");
 
     iframe.setAttribute("allowfullscreen", "");
     iframe.setAttribute(
       "allow",
       "fullscreen; autoplay; gamepad; accelerometer; gyroscope; clipboard-write"
     );
-    iframe.setAttribute("referrerpolicy", "no-referrer-when-downgrade");
+    // как прямой заход — без referrer с wgl.su
+    iframe.setAttribute("referrerpolicy", "no-referrer");
 
     iframe.src = url;
     iframe.onload = () => {
@@ -186,7 +124,7 @@
     setTimeout(() => {
       if (!loaded) {
         status.style.display = "none";
-        if (stage) stage.classList.add("is-on");
+        stage.classList.add("is-on");
         fitIframe();
       }
     }, 2500);
@@ -241,8 +179,6 @@
     if (status) status.style.display = "none";
     if (stage) stage.classList.remove("is-on");
     if (playTimer) playTimer.style.display = "none";
-    if (orientHint) orientHint.classList.remove("is-on");
-    if (fsGate) fsGate.classList.remove("is-on");
   }
 
   function bindViewportTracking() {
@@ -252,18 +188,12 @@
       setTimeout(scheduleFit, 250);
       setTimeout(scheduleFit, 600);
     });
-    document.addEventListener("fullscreenchange", scheduleFit);
-    document.addEventListener("webkitfullscreenchange", scheduleFit);
     window.addEventListener("focus", scheduleFit);
     if (window.visualViewport) {
       window.visualViewport.addEventListener("resize", scheduleFit, { passive: true });
       window.visualViewport.addEventListener("scroll", scheduleFit, { passive: true });
     }
-    // адресная строка / жесты — периодическая сверка на мобилке
-    setInterval(() => {
-      const box = viewportBox();
-      if (isMobileLike(box.w, box.h)) fitIframe();
-    }, 1000);
+    setInterval(scheduleFit, 1000);
   }
 
   async function boot() {
@@ -274,21 +204,7 @@
     }
     if (notFound) notFound.hidden = true;
 
-    // обёртка для масштаба (если в разметке ещё нет)
-    if (iframe && stage && !fit) {
-      const wrap = document.createElement("div");
-      wrap.id = "gameFit";
-      iframe.parentNode.insertBefore(wrap, iframe);
-      wrap.appendChild(iframe);
-    }
-
     bindViewportTracking();
-    if (fsBtn) {
-      fsBtn.addEventListener("click", (e) => {
-        e.preventDefault();
-        enterFullscreen();
-      });
-    }
 
     const local = LOCAL_GAMES[code];
     if (local) {
