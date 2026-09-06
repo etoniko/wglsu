@@ -2,21 +2,24 @@
 <html lang="ru" data-theme="dark">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover, interactive-widget=resizes-content">
 <title>Запуск игры — wgl.su</title>
 <meta name="robots" content="noindex, follow">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <link rel="icon" href="/icon.png" type="image/png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Sora:wght@500;600&family=Syne:wght@800&display=swap" rel="stylesheet">
-<link href="/assets/play-launch.css?2" rel="stylesheet">
+<link href="/assets/play-launch.css?3" rel="stylesheet">
 </head>
 <body>
 
 <div id="gameStage">
-  <iframe id="gameFrame" title="Игра" allowfullscreen playsinline></iframe>
+  <div id="gameFit">
+    <iframe id="gameFrame" title="Игра" allowfullscreen playsinline></iframe>
+  </div>
 </div>
 
 <div id="playTimer" class="play-timer" aria-live="polite">
@@ -25,7 +28,11 @@
   <span class="play-timer__time" id="playTimerValue">00:00</span>
 </div>
 
-<div id="orientHint" class="orient-hint" aria-hidden="true">Поверни телефон горизонтально — так удобнее</div>
+<div id="fsGate" class="fs-gate" aria-hidden="true">
+  <button type="button" class="fs-gate__btn" id="fsBtn">На весь экран</button>
+</div>
+
+<div id="orientHint" class="orient-hint" aria-hidden="true">Поверни горизонтально — игра на весь экран</div>
 
 <div id="status" class="wrapper">
   <div class="brand">WGL.su</div>
@@ -41,6 +48,6 @@
   </div>
 </div>
 
-<script src="/assets/play-launch.js?2"></script>
+<script src="/assets/play-launch.js?3"></script>
 </body>
 </html>
