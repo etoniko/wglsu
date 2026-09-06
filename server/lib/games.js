@@ -67,3 +67,5 @@ export function findGame(q) {
 export function playPath(game) {
   return `/g/${game.code}`;
 }
+
+/** Совместимость: динамический каталог подключается в server через allGames/findAnyGame */

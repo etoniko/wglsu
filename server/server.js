@@ -57,6 +57,17 @@ import {
 } from "./lib/votes.js";
 import { GAMES, findGame, playPath } from "./lib/games.js";
 import {
+  allGames,
+  findAnyGame,
+  isAdminUser,
+  createSubmission,
+  approveSubmission,
+  rejectSubmission,
+  readPending,
+  publicSubmission,
+  ensureGameUploads,
+} from "./lib/catalog.js";
+import {
   globalChatPath,
   gameChatPath,
   dmPath,
@@ -71,6 +82,7 @@ const ROOT = path.join(__dirname, "..");
 const PORT = Number(process.env.PORT) || 3847;
 
 initStore();
+ensureGameUploads();
 
 const app = express();
 app.set("trust proxy", 1);
@@ -161,6 +173,7 @@ function profilePayload(user, viewer = null) {
     pub.voteBudget = voteSummary(user);
     pub.giftsSent = user.giftsSent || [];
     pub.isSelf = true;
+    pub.isAdmin = isAdminUser(user);
   } else if (viewer) {
     pub.isFriend = (viewer.friends || []).includes(user.id);
     pub.requestOut = (viewer.friendRequestsOut || []).includes(user.id);
@@ -270,12 +283,18 @@ app.post("/api/avatar", authMiddleware, (req, res) => {
 
 // ——— Games + votes ———
 function rebuildGameList(votes, myVotes = null) {
-  return GAMES.map((g) => ({
-    ...g,
-    play: playPath(g),
-    score: Math.max(0, Number(votes[g.id]?.score) || 0),
-    myVotes: myVotes ? Number(myVotes[g.id] || 0) : undefined,
-  })).sort((a, b) => b.score - a.score || a.name.localeCompare(b.name, "ru"));
+  return allGames()
+    .map((g) => ({
+      ...g,
+      play: playPath(g),
+      score: Math.max(0, Number(votes[g.id]?.score) || 0),
+      myVotes: myVotes ? Number(myVotes[g.id] || 0) : undefined,
+    }))
+    .sort((a, b) => b.score - a.score || a.name.localeCompare(b.name, "ru"));
+}
+
+function resolveGame(q) {
+  return findAnyGame(q) || findGame(q) || GAMES.find((g) => g.id === q) || null;
 }
 
 app.get("/api/games", optionalAuth, (req, res) => {
@@ -289,7 +308,7 @@ app.get("/api/games", optionalAuth, (req, res) => {
 /** amount = абсолютное; action=klass → +1 «класс», при полном бюджете −1 с другой карточки */
 app.post("/api/games/:id/vote", authMiddleware, async (req, res) => {
   try {
-    const game = findGame(req.params.id) || GAMES.find((g) => g.id === req.params.id);
+    const game = resolveGame(req.params.id);
     if (!game) return res.status(404).json({ ok: false, error: "Игра не найдена" });
 
     const user = loadUser(req.user.id);
@@ -396,11 +415,168 @@ app.post("/api/votes/reset", authMiddleware, async (req, res) => {
   }
 });
 
+// ——— Publish game (community) ———
+const COVER_MAX = 8 * 1024 * 1024;
+const VIDEO_MAX = 25 * 1024 * 1024;
+
+const gameSubmitUpload = multer({
+  storage: multer.diskStorage({
+    destination: (req, file, cb) => {
+      const dir =
+        file.fieldname === "video"
+          ? path.join(UPLOADS_DIR, "game-videos")
+          : path.join(UPLOADS_DIR, "game-covers");
+      fs.mkdirSync(dir, { recursive: true });
+      cb(null, dir);
+    },
+    filename: (req, file, cb) => {
+      const ext = (path.extname(file.originalname) || "").toLowerCase();
+      const safeImg = [".png", ".jpg", ".jpeg", ".webp", ".gif"].includes(ext) ? ext : ".jpg";
+      const safeVid = [".mp4", ".webm", ".mov"].includes(ext) ? ext : ".mp4";
+      const use = file.fieldname === "video" ? safeVid : safeImg;
+      cb(null, `${req.user.id}-${Date.now()}-${file.fieldname}${use}`);
+    },
+  }),
+  limits: { fileSize: VIDEO_MAX, files: 2 },
+  fileFilter: (_req, file, cb) => {
+    if (file.fieldname === "cover" || file.fieldname === "img") {
+      if (!/^image\/(png|jpeg|jpg|webp|gif)$/.test(file.mimetype)) {
+        return cb(new Error("Обложка: только PNG/JPG/WEBP/GIF"));
+      }
+      if (file.size > COVER_MAX) return cb(new Error("Обложка максимум 8 МБ"));
+      return cb(null, true);
+    }
+    if (file.fieldname === "video") {
+      if (!/^video\/(mp4|webm|quicktime)$/.test(file.mimetype) && file.mimetype !== "video/mp4") {
+        // allow common mp4 mime variants
+        if (!String(file.mimetype || "").startsWith("video/")) {
+          return cb(new Error("Видео: только MP4/WEBM"));
+        }
+      }
+      return cb(null, true);
+    }
+    cb(new Error("Неизвестное поле файла"));
+  },
+});
+
+app.post(
+  "/api/games/submit",
+  authMiddleware,
+  (req, res) => {
+    gameSubmitUpload.fields([
+      { name: "cover", maxCount: 1 },
+      { name: "img", maxCount: 1 },
+      { name: "video", maxCount: 1 },
+    ])(req, res, async (err) => {
+      try {
+        if (err) {
+          const msg =
+            err.code === "LIMIT_FILE_SIZE"
+              ? "Файл слишком большой (видео до 25 МБ, фото до 8 МБ)"
+              : err.message || "Ошибка загрузки";
+          return res.status(400).json({ ok: false, error: msg });
+        }
+        verifyBotTraps(req.body);
+        await verifyCaptcha(req.body.captchaId, req.body.captcha);
+
+        const user = loadUser(req.user.id);
+        limitUserAction(user, "gameSubmit", LIMITS.gameSubmitMinInterval);
+        limitUserCount(
+          user,
+          "gameSubmitDay",
+          LIMITS.gameSubmitPerDay,
+          24 * 60 * 60 * 1000,
+          "Лимит: 3 заявки в сутки"
+        );
+
+        const coverFile = req.files?.cover?.[0] || req.files?.img?.[0];
+        const videoFile = req.files?.video?.[0];
+        if (!coverFile) return res.status(400).json({ ok: false, error: "Нужно фото игры" });
+        if (!videoFile) return res.status(400).json({ ok: false, error: "Нужно видео до 15 секунд" });
+        if (coverFile.size > COVER_MAX) {
+          return res.status(400).json({ ok: false, error: "Обложка максимум 8 МБ" });
+        }
+
+        const img = `/uploads/game-covers/${coverFile.filename}`;
+        const video = `/uploads/game-videos/${videoFile.filename}`;
+        const sub = await createSubmission({
+          user,
+          name: req.body.name,
+          url: req.body.url,
+          zone: req.body.zone,
+          blurb: req.body.blurb,
+          img,
+          video,
+          videoDuration: req.body.videoDuration,
+        });
+        await saveUser(user);
+        res.json({ ok: true, submission: publicSubmission(sub, user) });
+      } catch (e) {
+        res.status(e.status || 500).json({ ok: false, error: e.message });
+      }
+    });
+  }
+);
+
+app.get("/api/games/submissions", authMiddleware, (req, res) => {
+  try {
+    const user = loadUser(req.user.id);
+    const pending = readPending();
+    if (isAdminUser(user)) {
+      const status = String(req.query.status || "pending");
+      const list = pending
+        .filter((p) => (status === "all" ? true : p.status === status))
+        .slice(0, 100)
+        .map((p) => publicSubmission(p, user));
+      return res.json({ ok: true, admin: true, submissions: list });
+    }
+    const mine = pending
+      .filter((p) => Number(p.authorId) === Number(user.id))
+      .slice(0, 50)
+      .map((p) => publicSubmission(p, user));
+    res.json({ ok: true, admin: false, submissions: mine });
+  } catch (e) {
+    res.status(e.status || 500).json({ ok: false, error: e.message });
+  }
+});
+
+app.post("/api/games/submissions/:id/approve", authMiddleware, async (req, res) => {
+  try {
+    const admin = loadUser(req.user.id);
+    if (!isAdminUser(admin)) return res.status(403).json({ ok: false, error: "Только админ" });
+    const result = await approveSubmission(req.params.id, admin);
+    const votes = readJson(votesPath(), {});
+    if (!votes[result.game.id]) votes[result.game.id] = { score: 0 };
+    await writeJson(votesPath(), votes);
+    res.json({
+      ok: true,
+      game: result.game,
+      submission: publicSubmission(result.submission, admin),
+      grantedUsers: result.grantedUsers,
+      games: rebuildGameList(votes, normalizeUserVotes(admin.votes)),
+      voteBudget: voteSummary(loadUser(admin.id)),
+    });
+  } catch (e) {
+    res.status(e.status || 500).json({ ok: false, error: e.message });
+  }
+});
+
+app.post("/api/games/submissions/:id/reject", authMiddleware, async (req, res) => {
+  try {
+    const admin = loadUser(req.user.id);
+    if (!isAdminUser(admin)) return res.status(403).json({ ok: false, error: "Только админ" });
+    const sub = await rejectSubmission(req.params.id, admin, req.body?.note);
+    res.json({ ok: true, submission: publicSubmission(sub, admin) });
+  } catch (e) {
+    res.status(e.status || 500).json({ ok: false, error: e.message });
+  }
+});
+
 // ——— Play tracking ———
 app.post("/api/play/start", authMiddleware, async (req, res) => {
   try {
     const gameId = req.body.gameId || req.body.game;
-    const game = findGame(gameId) || findGame(req.body.url);
+    const game = resolveGame(gameId) || resolveGame(req.body.url);
     if (!game) return res.status(400).json({ ok: false, error: "Неизвестная игра" });
 
     const user = loadUser(req.user.id);
@@ -428,7 +604,7 @@ app.post("/api/play/heartbeat", authMiddleware, async (req, res) => {
     limitUserAction(user, "heartbeat", LIMITS.playHeartbeatMin);
 
     const gameName = req.body.game || req.body.gameName;
-    const game = findGame(gameName);
+    const game = resolveGame(gameName);
     if (!game) return res.status(400).json({ ok: false, error: "Неизвестная игра" });
 
     let delta = Number(req.body.deltaMs) || LIMITS.playHeartbeatMin;
@@ -788,7 +964,7 @@ app.post("/api/chat", authMiddleware, async (req, res) => {
 });
 
 app.get("/api/chat/game/:code/history", (req, res) => {
-  const game = findGame(req.params.code);
+  const game = resolveGame(req.params.code);
   if (!game) return res.status(404).json({ ok: false, error: "Игра не найдена" });
   res.json({
     ok: true,
@@ -799,7 +975,7 @@ app.get("/api/chat/game/:code/history", (req, res) => {
 
 app.post("/api/chat/game/:code", authMiddleware, async (req, res) => {
   try {
-    const game = findGame(req.params.code);
+    const game = resolveGame(req.params.code);
     if (!game) return res.status(404).json({ ok: false, error: "Игра не найдена" });
     const user = loadUser(req.user.id);
     const msg = await postPublicChat({
@@ -1015,7 +1191,7 @@ function redirectToSite(req, res) {
 }
 
 app.get("/api/g/:code", (req, res) => {
-  const game = findGame(req.params.code);
+  const game = resolveGame(req.params.code);
   if (!game) return res.status(404).json({ ok: false, error: "Игра не найдена" });
   res.json({ ok: true, game: { ...game, play: playPath(game) } });
 });

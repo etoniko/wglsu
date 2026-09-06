@@ -107,4 +107,6 @@ export const LIMITS = {
   forumThreadMinInterval: 60 * 1000,
   searchMinInterval: 500,
   avatarMinInterval: 60 * 1000,
+  gameSubmitMinInterval: 5 * 60 * 1000,
+  gameSubmitPerDay: 3,
 };

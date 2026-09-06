@@ -31,7 +31,10 @@ export function initStore() {
     path.join(DATA_DIR, "forum"),
     path.join(DATA_DIR, "votes"),
     path.join(DATA_DIR, "meta"),
+    path.join(DATA_DIR, "games"),
     path.join(UPLOADS_DIR, "avatars"),
+    path.join(UPLOADS_DIR, "game-covers"),
+    path.join(UPLOADS_DIR, "game-videos"),
   ]) {
     ensureDir(d);
   }
@@ -43,7 +46,18 @@ export function initStore() {
 
   const metaPath = path.join(DATA_DIR, "meta", "counters.json");
   if (!fs.existsSync(metaPath)) {
-    writeJsonSync(metaPath, { nextUserId: 1, nextThreadId: 1, nextPostId: 1 });
+    writeJsonSync(metaPath, {
+      nextUserId: 1,
+      nextThreadId: 1,
+      nextPostId: 1,
+      nextSubmissionId: 1,
+    });
+  } else {
+    const counters = readJson(metaPath, {});
+    if (counters.nextSubmissionId == null) {
+      counters.nextSubmissionId = 1;
+      writeJsonSync(metaPath, counters);
+    }
   }
   const nickIdx = path.join(DATA_DIR, "indexes", "nicks.json");
   if (!fs.existsSync(nickIdx)) writeJsonSync(nickIdx, {});

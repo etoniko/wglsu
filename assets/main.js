@@ -38,11 +38,13 @@ function placeholderHTML(game) {
 
 function mediaHTML(game) {
   const fallback = placeholderHTML(game);
+  const video = window.WGLSocial ? WGLSocial.mediaUrl(game.video) : game.video;
+  const img = window.WGLSocial ? WGLSocial.mediaUrl(game.img) : game.img;
   if (game.video) {
-    return `${fallback}<video class="thumb" autoplay loop muted playsinline preload="metadata" poster="${game.img || ""}" data-media="video"><source src="${game.video}" type="video/mp4"></video>`;
+    return `${fallback}<video class="thumb" autoplay loop muted playsinline preload="metadata" poster="${img || ""}" data-media="video"><source src="${video}" type="video/mp4"></video>`;
   }
   if (game.img) {
-    return `${fallback}<img class="thumb" src="${game.img}" alt="${game.name}" loading="lazy" data-media="img">`;
+    return `${fallback}<img class="thumb" src="${img}" alt="${game.name}" loading="lazy" data-media="img">`;
   }
   return fallback;
 }

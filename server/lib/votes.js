@@ -1,10 +1,12 @@
 /**
- * Голоса игрока = число отыгранных игр (gamesPlayed).
+ * Голоса игрока = число отыгранных игр (gamesPlayed) + бонусы за одобренные публикации.
  * Можно размазать по карточкам или вложить все в одну, можно забрать назад.
  */
 
 export function voteBudget(user) {
-  return Math.max(0, Number(user.stats?.gamesPlayed) || 0);
+  const played = Math.max(0, Number(user.stats?.gamesPlayed) || 0);
+  const bonus = Math.max(0, Number(user.stats?.bonusVotes) || 0);
+  return played + bonus;
 }
 
 export function normalizeUserVotes(votes) {

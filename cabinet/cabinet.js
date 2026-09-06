@@ -45,6 +45,11 @@ document.querySelectorAll(".cab-nav-btn").forEach((btn) => {
     if (view === "awards") refreshAwards();
     if (view === "rating") refreshRating();
     if (view === "votes") refreshVotes();
+    if (view === "publish") {
+      loadPublishCaptcha().catch(() => {});
+      refreshMySubmissions().catch(() => {});
+    }
+    if (view === "moderate") refreshModeration().catch(() => {});
   });
 });
 
@@ -487,6 +492,8 @@ document.getElementById("resetVotesBtn").addEventListener("click", async () => {
 async function bootApp() {
   const data = await api("/api/me");
   renderProfile(data.user, data.sessions);
+  const modNav = document.getElementById("navModerate");
+  if (modNav) modNav.hidden = !data.user?.isAdmin;
   connectWs();
 
   const q = new URLSearchParams(location.search);
@@ -497,6 +504,10 @@ async function bootApp() {
     document.querySelector('.cab-nav-btn[data-view="gifts"]')?.click();
     const input = document.querySelector('#giftSendForm [name="toUserId"]');
     if (input) input.value = q.get("gift");
+  } else if (q.get("publish")) {
+    document.querySelector('.cab-nav-btn[data-view="publish"]')?.click();
+  } else if (q.get("moderate") && data.user?.isAdmin) {
+    document.querySelector('.cab-nav-btn[data-view="moderate"]')?.click();
   }
 }
 
@@ -699,6 +710,172 @@ function connectWsPatched() {
   };
 }
 connectWs = connectWsPatched;
+
+/* ——— Publish game + admin moderation ——— */
+let publishCaptcha = { id: "", t0: Date.now() };
+
+async function loadPublishCaptcha() {
+  const data = await api("/api/captcha");
+  publishCaptcha = { id: data.id, t0: data.t0 || Date.now() };
+  const img = document.getElementById("publishCaptchaImg");
+  const idEl = document.getElementById("publishCaptchaId");
+  const t0 = document.getElementById("publishT0");
+  if (img) img.src = data.image;
+  if (idEl) idEl.value = data.id;
+  if (t0) t0.value = String(publishCaptcha.t0);
+  const input = document.querySelector('#publishForm [name="captcha"]');
+  if (input) input.value = "";
+}
+
+document.getElementById("publishCaptchaReload")?.addEventListener("click", () => {
+  loadPublishCaptcha().catch((e) => alert(e.message));
+});
+
+document.getElementById("publishVideo")?.addEventListener("change", (e) => {
+  const file = e.target.files?.[0];
+  const hint = document.getElementById("publishVideoHint");
+  const durEl = document.getElementById("publishVideoDuration");
+  if (!file) {
+    if (hint) hint.textContent = "Выбери ролик — длительность проверим в браузере.";
+    if (durEl) durEl.value = "";
+    return;
+  }
+  const url = URL.createObjectURL(file);
+  const v = document.createElement("video");
+  v.preload = "metadata";
+  v.onloadedmetadata = () => {
+    URL.revokeObjectURL(url);
+    const d = v.duration;
+    if (durEl) durEl.value = String(d);
+    if (!Number.isFinite(d) || d <= 0) {
+      if (hint) hint.textContent = "Не удалось прочитать длительность.";
+      return;
+    }
+    if (d > 15.5) {
+      if (hint) hint.textContent = `Слишком длинное: ${d.toFixed(1)} сек (макс. 15).`;
+      e.target.value = "";
+      if (durEl) durEl.value = "";
+      return;
+    }
+    if (hint) hint.textContent = `Ок: ${d.toFixed(1)} сек.`;
+  };
+  v.onerror = () => {
+    URL.revokeObjectURL(url);
+    if (hint) hint.textContent = "Не удалось открыть видео.";
+  };
+  v.src = url;
+});
+
+function statusLabel(s) {
+  if (s === "pending") return "на модерации";
+  if (s === "approved") return "одобрено";
+  if (s === "rejected") return "отклонено";
+  return s;
+}
+
+function renderSubmissionCard(sub, { admin = false } = {}) {
+  const img = mediaUrl(sub.img);
+  const video = mediaUrl(sub.video);
+  const actions = admin && sub.status === "pending"
+    ? `<div class="cab-sub-actions">
+        <button type="button" class="btn btn-primary" data-approve="${sub.id}">Одобрить</button>
+        <button type="button" class="btn btn-ghost" data-reject="${sub.id}">Отклонить</button>
+      </div>`
+    : "";
+  return `
+    <div class="cab-sub-card">
+      <div class="cab-sub-card__media">
+        <img src="${escapeHtml(img)}" alt="">
+        <video src="${escapeHtml(video)}" muted playsinline></video>
+      </div>
+      <div>
+        <strong>${escapeHtml(sub.name)}</strong>
+        <div class="cab-hint">${escapeHtml(sub.zone || "")} · ${escapeHtml(statusLabel(sub.status))} · от ${escapeHtml(sub.authorNick || "")}</div>
+        <div class="cab-hint"><a href="${escapeHtml(sub.url)}" target="_blank" rel="noopener">${escapeHtml(sub.url)}</a></div>
+        <div class="cab-hint">${escapeHtml(sub.blurb || "")}</div>
+      </div>
+      ${actions}
+    </div>`;
+}
+
+async function refreshMySubmissions() {
+  const box = document.getElementById("mySubmissions");
+  if (!box) return;
+  const data = await api("/api/games/submissions");
+  const list = data.submissions || [];
+  box.innerHTML = list.length
+    ? list.map((s) => renderSubmissionCard(s)).join("")
+    : `<p class="cab-hint">Заявок пока нет</p>`;
+}
+
+async function refreshModeration() {
+  const box = document.getElementById("modSubmissions");
+  if (!box) return;
+  const data = await api("/api/games/submissions?status=pending");
+  if (!data.admin) {
+    box.innerHTML = `<p class="cab-hint">Нет доступа</p>`;
+    return;
+  }
+  const list = data.submissions || [];
+  box.innerHTML = list.length
+    ? list.map((s) => renderSubmissionCard(s, { admin: true })).join("")
+    : `<p class="cab-hint">Очередь пуста</p>`;
+
+  box.querySelectorAll("[data-approve]").forEach((btn) => {
+    btn.addEventListener("click", async () => {
+      if (!confirm("Одобрить игру? Карточка появится в каталоге, всем +1 голос.")) return;
+      try {
+        const res = await api(`/api/games/submissions/${btn.dataset.approve}/approve`, {
+          method: "POST",
+          body: {},
+        });
+        alert(`Одобрено. Голос получили игроки: ${res.grantedUsers || 0}`);
+        refreshModeration();
+      } catch (e) {
+        alert(e.message);
+      }
+    });
+  });
+  box.querySelectorAll("[data-reject]").forEach((btn) => {
+    btn.addEventListener("click", async () => {
+      const note = prompt("Причина отклонения (необязательно):") || "";
+      try {
+        await api(`/api/games/submissions/${btn.dataset.reject}/reject`, {
+          method: "POST",
+          body: { note },
+        });
+        refreshModeration();
+      } catch (e) {
+        alert(e.message);
+      }
+    });
+  });
+}
+
+document.getElementById("publishForm")?.addEventListener("submit", async (e) => {
+  e.preventDefault();
+  const form = e.target;
+  const dur = Number(document.getElementById("publishVideoDuration")?.value || 0);
+  if (!dur || dur > 15.5) {
+    alert("Нужно видео не длиннее 15 секунд");
+    return;
+  }
+  const fd = new FormData(form);
+  fd.set("captchaId", publishCaptcha.id || fd.get("captchaId"));
+  fd.set("t0", String(publishCaptcha.t0 || fd.get("t0") || Date.now()));
+  fd.set("videoDuration", String(dur));
+  try {
+    await api("/api/games/submit", { method: "POST", body: fd });
+    alert("Заявка отправлена на модерацию");
+    form.reset();
+    document.getElementById("publishVideoDuration").value = "";
+    await loadPublishCaptcha();
+    await refreshMySubmissions();
+  } catch (err) {
+    alert(err.message);
+    loadPublishCaptcha().catch(() => {});
+  }
+});
 
 bootApp().catch(() => {
   setToken("");

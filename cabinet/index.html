@@ -59,6 +59,8 @@
         <button type="button" class="cab-nav-btn" data-view="awards">Награды</button>
         <button type="button" class="cab-nav-btn" data-view="rating">Рейтинг</button>
         <button type="button" class="cab-nav-btn" data-view="votes">Голоса</button>
+        <button type="button" class="cab-nav-btn" data-view="publish">Опубликовать игру</button>
+        <button type="button" class="cab-nav-btn" data-view="moderate" id="navModerate" hidden>Модерация игр</button>
       </nav>
       <button type="button" class="btn btn-ghost cab-logout" id="logoutBtn">Выйти</button>
     </aside>
@@ -180,16 +182,51 @@
 
       <div class="cab-view" data-view="votes">
         <h2>Голосование за карточки</h2>
-        <p class="cab-lead">Сколько игр отыграл — столько голосов. Можно все в одну карточку или по одному. Можно забрать назад.</p>
+        <p class="cab-lead">Сколько игр отыграл — столько голосов (+ бонусы за одобренные публикации сообщества). Можно все в одну карточку или по одному. Можно забрать назад.</p>
         <div id="voteBudgetBar" class="cab-budget"></div>
         <button type="button" class="btn btn-ghost" id="resetVotesBtn">Вернуть все голоса</button>
         <div id="votesList" class="cab-votes"></div>
+      </div>
+
+      <div class="cab-view" data-view="publish">
+        <h2>Опубликовать игру</h2>
+        <p class="cab-lead">Заявка уходит админу (Нико). Нужны название, ссылка, фото и видео до 15 секунд. Капча обязательна.</p>
+        <form id="publishForm" class="cab-form" enctype="multipart/form-data" autocomplete="off">
+          <input type="text" name="website" class="cab-hp" tabindex="-1" autocomplete="off" aria-hidden="true">
+          <input type="text" name="company" class="cab-hp" tabindex="-1" autocomplete="off" aria-hidden="true">
+          <input type="hidden" name="t0" id="publishT0">
+          <label>Название <input name="name" required minlength="2" maxlength="40" placeholder="Моя игра"></label>
+          <label>Ссылка <input name="url" type="url" required placeholder="https://…"></label>
+          <label>Зона <input name="zone" maxlength="8" placeholder=".su" value=".su"></label>
+          <label>Коротко о игре <input name="blurb" maxlength="80" placeholder="Быстрый экшен"></label>
+          <label>Фото <input name="cover" type="file" accept="image/png,image/jpeg,image/webp,image/gif" required></label>
+          <label>Видео до 15 сек <input name="video" id="publishVideo" type="file" accept="video/mp4,video/webm" required></label>
+          <input type="hidden" name="videoDuration" id="publishVideoDuration" value="">
+          <p class="cab-hint" id="publishVideoHint">Выбери ролик — длительность проверим в браузере.</p>
+          <div class="cab-captcha-row">
+            <img id="publishCaptchaImg" class="cab-captcha" alt="Капча" width="180" height="56">
+            <div>
+              <label>Капча <input name="captcha" required autocomplete="off" maxlength="8" placeholder="код с картинки"></label>
+              <input type="hidden" name="captchaId" id="publishCaptchaId">
+              <button type="button" class="btn btn-ghost" id="publishCaptchaReload">Обновить</button>
+            </div>
+          </div>
+          <button class="btn btn-primary" type="submit">Отправить на модерацию</button>
+        </form>
+        <h3>Мои заявки</h3>
+        <div id="mySubmissions" class="cab-list"></div>
+      </div>
+
+      <div class="cab-view" data-view="moderate">
+        <h2>Модерация игр</h2>
+        <p class="cab-lead">Одобрение добавляет карточку (чат + голоса) и даёт +1 голос всем игрокам.</p>
+        <div id="modSubmissions" class="cab-list"></div>
       </div>
     </div>
   </section>
 </main>
 
 <script src="/cabinet/auth-shared.js?1"></script>
-<script src="/cabinet/cabinet.js?4"></script>
+<script src="/cabinet/cabinet.js?5"></script>
 </body>
 </html>
