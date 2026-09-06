@@ -1,4 +1,4 @@
-/* WGL game — чистый fullscreen iframe, поверх только таймер */
+/* iframe = 100% экрана, без JS-масштаба */
 :root {
   --bg: #0a0604;
   --ink: #f3ebe3;
@@ -6,51 +6,48 @@
   --accent: #e11d2e;
   --hot: #ffb347;
 }
-* { box-sizing: border-box; }
+*, *::before, *::after { box-sizing: border-box; }
 html, body {
   margin: 0;
   padding: 0;
   width: 100%;
   height: 100%;
-  min-height: 100dvh;
   background: #000;
   overflow: hidden;
   font-family: "Sora", sans-serif;
   color: var(--ink);
   touch-action: none;
   -webkit-text-size-adjust: 100%;
-  overscroll-behavior: none;
 }
 
 #gameStage {
   position: fixed;
-  left: 0;
-  top: 0;
+  inset: 0;
   width: 100%;
   height: 100%;
-  min-height: 100dvh;
-  overflow: hidden;
-  background: #000;
+  width: 100vw;
+  height: 100vh;
+  height: 100dvh;
   display: none;
+  background: #000;
   z-index: 1;
+  overflow: hidden;
 }
 #gameStage.is-on {
   display: block;
 }
 
-#gameFit {
+#gameFit,
+#gameFrame {
   position: absolute;
   inset: 0;
-  overflow: hidden;
-}
-
-#gameFrame {
-  border: none;
-  background: #000;
-  display: block;
   width: 100%;
   height: 100%;
-  max-width: none;
+  border: 0;
+  margin: 0;
+  padding: 0;
+  display: block;
+  background: #000;
 }
 
 .wrapper {
@@ -62,11 +59,9 @@ html, body {
   flex-direction: column;
   text-align: center;
   padding: 24px;
-  padding-bottom: max(24px, env(safe-area-inset-bottom));
   background:
     radial-gradient(circle at 70% 20%, rgba(225, 29, 46, 0.22), transparent 40%),
     linear-gradient(160deg, #0a0604, #1a100c 55%, #2a1810);
-  animation: fadeIn 0.35s ease;
   z-index: 5;
 }
 .brand {
@@ -100,7 +95,6 @@ html, body {
   text-decoration: none;
   opacity: 0.75;
 }
-.home:hover { opacity: 1; }
 
 .play-timer {
   position: fixed;
@@ -157,7 +151,6 @@ html, body {
 .not-found[hidden] { display: none !important; }
 
 @keyframes spin { to { transform: rotate(360deg); } }
-@keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
 @keyframes pulse {
   0%, 100% { opacity: 1; transform: scale(1); }
   50% { opacity: 0.55; transform: scale(0.85); }

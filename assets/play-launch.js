@@ -1,4 +1,4 @@
-/** Запуск игры: iframe на весь экран, поверх только таймер ЛК */
+/** Запуск: iframe 100%×100% через CSS, поверх только таймер */
 (function () {
   const LOCAL_GAMES = {
     agars: { code: "agars", id: "agar-su", name: "Agar.su", url: "https://agar.su/" },
@@ -15,8 +15,6 @@
   const playTimer = document.getElementById("playTimer");
   const playTimerValue = document.getElementById("playTimerValue");
   const notFound = document.getElementById("notFound");
-
-  let fitRaf = 0;
 
   function apiBase() {
     const h = location.hostname;
@@ -40,46 +38,6 @@
     return (q.get("game") || q.get("code") || "").toLowerCase();
   }
 
-  function viewportBox() {
-    const vv = window.visualViewport;
-    if (vv && vv.width > 0 && vv.height > 0) {
-      return {
-        w: Math.max(1, Math.round(vv.width)),
-        h: Math.max(1, Math.round(vv.height)),
-        left: Math.round(vv.offsetLeft || 0),
-        top: Math.round(vv.offsetTop || 0),
-      };
-    }
-    return {
-      w: Math.max(1, window.innerWidth || document.documentElement.clientWidth),
-      h: Math.max(1, window.innerHeight || document.documentElement.clientHeight),
-      left: 0,
-      top: 0,
-    };
-  }
-
-  function fitIframe() {
-    if (!iframe || !stage) return;
-    const box = viewportBox();
-    stage.style.left = box.left + "px";
-    stage.style.top = box.top + "px";
-    stage.style.width = box.w + "px";
-    stage.style.height = box.h + "px";
-    stage.style.right = "auto";
-    stage.style.bottom = "auto";
-    stage.style.minHeight = "0";
-    iframe.style.width = "100%";
-    iframe.style.height = "100%";
-  }
-
-  function scheduleFit() {
-    if (fitRaf) cancelAnimationFrame(fitRaf);
-    fitRaf = requestAnimationFrame(() => {
-      fitRaf = 0;
-      fitIframe();
-    });
-  }
-
   function formatTimer(ms) {
     const s = Math.floor(ms / 1000);
     const h = Math.floor(s / 3600);
@@ -100,9 +58,7 @@
     if (!iframe || !status) return;
     let loaded = false;
 
-    fitIframe();
     stage.classList.add("is-on");
-
     iframe.setAttribute("allowfullscreen", "");
     iframe.setAttribute(
       "allow",
@@ -110,14 +66,13 @@
     );
     iframe.setAttribute("referrerpolicy", "origin");
 
-    // embed=1 — на стороне игры прячет юр.полоску; не триггерит Яндекс-режим
     const u = new URL(url, location.href);
     if (!u.searchParams.has("embed")) u.searchParams.set("embed", "1");
     iframe.src = u.toString();
+
     iframe.onload = () => {
       loaded = true;
       status.style.display = "none";
-      fitIframe();
     };
     iframe.onerror = () => {
       if (message) message.textContent = "Ошибка загрузки\nВозврат на главную…";
@@ -127,7 +82,6 @@
       if (!loaded) {
         status.style.display = "none";
         stage.classList.add("is-on");
-        fitIframe();
       }
     }, 2500);
   }
@@ -183,21 +137,6 @@
     if (playTimer) playTimer.style.display = "none";
   }
 
-  function bindViewportTracking() {
-    window.addEventListener("resize", scheduleFit, { passive: true });
-    window.addEventListener("orientationchange", () => {
-      setTimeout(scheduleFit, 50);
-      setTimeout(scheduleFit, 250);
-      setTimeout(scheduleFit, 600);
-    });
-    window.addEventListener("focus", scheduleFit);
-    if (window.visualViewport) {
-      window.visualViewport.addEventListener("resize", scheduleFit, { passive: true });
-      window.visualViewport.addEventListener("scroll", scheduleFit, { passive: true });
-    }
-    setInterval(scheduleFit, 1000);
-  }
-
   async function boot() {
     const code = codeFromPath();
     if (!code) {
@@ -205,8 +144,6 @@
       return;
     }
     if (notFound) notFound.hidden = true;
-
-    bindViewportTracking();
 
     const local = LOCAL_GAMES[code];
     if (local) {
